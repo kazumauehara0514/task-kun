@@ -472,9 +472,12 @@ body{
   position:fixed;inset:0;z-index:9999;background:var(--dark);
   display:flex;align-items:center;justify-content:center;
   transition:opacity .3s;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:24px 0;
 }
 .lock-screen.hidden{display:none}
 .lock-box{
+  margin:auto;
   text-align:center;width:min(320px,calc(100vw - 48px));
   padding:40px 24px;background:var(--surface);border-radius:16px;
   box-shadow:0 16px 48px rgba(0,0,0,.3);
