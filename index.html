@@ -531,14 +531,17 @@ body{
     <div class="nav-spacer"></div>
     <div class="nav-stats" id="nav-stats"></div>
     <button class="nav-sync" id="nav-sync-btn" title="同期設定"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 0110.89-3.48M14 8a6 6 0 01-10.89 3.48"/><path d="M14 2v4h-4M2 14v-4h4"/></svg></button>
-    <div class="nav-avatar" id="nav-avatar">K</div>
+    <button class="nav-sync" id="nav-logout-btn" title="ログアウト"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8"/></svg></button>
   </nav>
 
   <!-- ── MOBILE HEADER ── -->
   <header class="mob-header">
     <div class="hdr-top">
       <div class="hdr-date" id="mob-date"></div>
-      <button class="hdr-sync" id="mob-sync-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 0110.89-3.48M14 8a6 6 0 01-10.89 3.48"/><path d="M14 2v4h-4M2 14v-4h4"/></svg></button>
+      <div style="display:flex;gap:6px">
+        <button class="hdr-sync" id="mob-sync-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 0110.89-3.48M14 8a6 6 0 01-10.89 3.48"/><path d="M14 2v4h-4M2 14v-4h4"/></svg></button>
+        <button class="hdr-sync" id="mob-logout-btn" title="ログアウト"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8"/></svg></button>
+      </div>
     </div>
     <div class="hdr-main">
       <div class="hdr-title" id="mob-title">タスクくん</div>

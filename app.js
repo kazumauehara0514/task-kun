@@ -631,6 +631,9 @@ function bindEvents() {
   document.getElementById('modal-close').addEventListener('click', closeSyncModal);
   document.getElementById('modal-bg').addEventListener('click', closeSyncModal);
   document.getElementById('modal-save').addEventListener('click', saveSyncCfg);
+  // Logout
+  document.getElementById('nav-logout-btn').addEventListener('click', logout);
+  document.getElementById('mob-logout-btn').addEventListener('click', logout);
   // Keyboard
   document.addEventListener('keydown', e => {
     if (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)) return;
@@ -701,6 +704,11 @@ function checkLock() {
   btn.addEventListener('click', tryUnlock);
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); tryUnlock(); } });
   inp.focus();
+}
+
+function logout() {
+  localStorage.removeItem('tkun_unlocked_at');
+  location.reload();
 }
 
 // ── Init ──
