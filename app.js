@@ -846,6 +846,11 @@ async function initSupabaseClient() {
 async function init() {
   const lockEl = document.getElementById('lock-screen');
 
+  // 同期モーダルのイベントを先に登録（ログイン前でも使えるように）
+  document.getElementById('modal-close').addEventListener('click', closeSyncModal);
+  document.getElementById('modal-bg').addEventListener('click', closeSyncModal);
+  document.getElementById('modal-save').addEventListener('click', saveSyncCfg);
+
   // Supabaseクライアントを初期化
   const hasSB = await initSupabaseClient();
 
