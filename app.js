@@ -677,14 +677,15 @@ function isUnlocked() {
   return (Date.now() - Number(ts)) < LOCK_DURATION;
 }
 
+let lockBound = false;
 function showLockScreen() {
   const lockEl = document.getElementById('lock-screen');
   if (!lockEl) return;
   const stored = localStorage.getItem(LOCK_PASS_KEY);
+  const desc = document.querySelector('.lock-desc');
   const inp = document.getElementById('lock-pass');
   const btn = document.getElementById('lock-btn');
   const err = document.getElementById('lock-err');
-  const desc = document.querySelector('.lock-desc');
 
   // 初回：パスワード設定モード
   if (!stored) {
@@ -700,41 +701,48 @@ function showLockScreen() {
   lockEl.classList.remove('hidden');
   inp.value = '';
   err.textContent = '';
-  inp.focus();
+  setTimeout(() => inp.focus(), 100);
 
-  function tryUnlock() {
-    const val = inp.value;
-    if (!val) { err.textContent = 'パスワードを入力してください'; return; }
+  if (lockBound) return; // イベント重複防止
+  lockBound = true;
 
-    if (!stored) {
+  function doLogin() {
+    const passInput = document.getElementById('lock-pass');
+    const errEl = document.getElementById('lock-err');
+    const val = passInput.value;
+    const savedPass = localStorage.getItem(LOCK_PASS_KEY);
+
+    if (!val) {
+      errEl.textContent = 'パスワードを入力してください';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    if (!savedPass) {
       // 初回：パスワードを保存
       localStorage.setItem(LOCK_PASS_KEY, hashPass(val));
       localStorage.setItem(LOCK_TS_KEY, Date.now().toString());
-      lockEl.classList.add('hidden');
+      document.getElementById('lock-screen').classList.add('hidden');
       startApp();
-    } else if (hashPass(val) === stored) {
+    } else if (hashPass(val) === savedPass) {
       // 正しいパスワード
       localStorage.setItem(LOCK_TS_KEY, Date.now().toString());
-      lockEl.classList.add('hidden');
-      err.textContent = '';
+      document.getElementById('lock-screen').classList.add('hidden');
+      errEl.textContent = '';
       startApp();
     } else {
       // パスワード間違い
-      err.textContent = 'パスワードが違います';
-      inp.value = '';
-      inp.focus();
+      errEl.textContent = 'パスワードが違います';
+      errEl.style.display = 'block';
+      passInput.value = '';
+      passInput.focus();
     }
   }
 
-  // クリーンにイベント登録（重複防止）
-  const newBtn = btn.cloneNode(true);
-  btn.parentNode.replaceChild(newBtn, btn);
-  newBtn.addEventListener('click', tryUnlock);
-
-  const newInp = inp.cloneNode(true);
-  inp.parentNode.replaceChild(newInp, inp);
-  newInp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); tryUnlock(); } });
-  newInp.focus();
+  btn.addEventListener('click', doLogin);
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); doLogin(); }
+  });
 }
 
 function logout() {
