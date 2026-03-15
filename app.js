@@ -658,7 +658,12 @@ function setupViewportFix() {
 // ── Lock Screen ──
 const LOCK_PASS_KEY = 'tkun_pass';
 function hashPass(p) { let h=0; for(let i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h|=0;} return h.toString(36); }
-function isLocked() { return !sessionStorage.getItem('tkun_unlocked'); }
+const LOCK_DURATION = 24 * 60 * 60 * 1000; // 24時間
+function isLocked() {
+  const ts = localStorage.getItem('tkun_unlocked_at');
+  if (!ts) return true;
+  return (Date.now() - Number(ts)) > LOCK_DURATION;
+}
 function checkLock() {
   const stored = localStorage.getItem(LOCK_PASS_KEY);
   const lockEl = document.getElementById('lock-screen');
@@ -680,11 +685,11 @@ function checkLock() {
     if (!stored) {
       // First time: set password
       localStorage.setItem(LOCK_PASS_KEY, hashPass(val));
-      sessionStorage.setItem('tkun_unlocked', '1');
+      localStorage.setItem('tkun_unlocked_at', Date.now().toString());
       lockEl.classList.add('hidden');
       startApp();
     } else if (hashPass(val) === stored) {
-      sessionStorage.setItem('tkun_unlocked', '1');
+      localStorage.setItem('tkun_unlocked_at', Date.now().toString());
       lockEl.classList.add('hidden');
       startApp();
     } else {
