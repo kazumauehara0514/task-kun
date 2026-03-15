@@ -7,13 +7,13 @@ const CAT_COLORS = ['#2563EB','#DB2777','#A8A49C','#059669','#D97706','#7C3AED',
 let CAT = { ...DEFAULT_CATS };
 const PRI = { high: '高', mid: '中', low: '低' };
 const STATUS = { todo: '未着手', wip: '進行中', done: '完了' };
-let FTITLES = { all: 'すべてのタスク', done: '完了済みタスク', wip: '進行中タスク', todo: '未着手タスク' };
+let FTITLES = { all: 'すべて(未完了)', done: '完了済みタスク', wip: '進行中タスク', todo: '未着手タスク' };
 
 function loadCategories() {
   const custom = JSON.parse(localStorage.getItem('tkun_cats') || '[]');
   CAT = { ...DEFAULT_CATS };
   custom.forEach(c => { CAT[c.key] = c.label; });
-  FTITLES = { all: 'すべてのタスク', done: '完了済みタスク' };
+  FTITLES = { all: 'すべて(未完了)', done: '完了済みタスク' };
   Object.keys(CAT).forEach(k => { FTITLES[k] = CAT[k]; });
 }
 function saveCategories() {
@@ -359,7 +359,7 @@ function render() {
   const nd = document.getElementById('nav-date'); if(nd) nd.textContent = ds;
   const ns = document.getElementById('nav-stats');
   if(ns) {
-    ns.innerHTML = `<button class="nstat ns-all ${filter==='all'?'nstat-active':''}" data-filter="all"><div class="nstat-dot"></div>${c.total} すべて</button><button class="nstat ns-wip ${filter==='wip'?'nstat-active':''}" data-filter="wip"><div class="nstat-dot"></div>${c.wip} 進行中</button><button class="nstat ns-todo ${filter==='todo'?'nstat-active':''}" data-filter="todo"><div class="nstat-dot"></div>${c.all - c.wip} 未着手</button>`;
+    ns.innerHTML = `<button class="nstat ns-all ${filter==='all'?'nstat-active':''}" data-filter="all"><div class="nstat-dot"></div>${c.all} すべて(未完了)</button><button class="nstat ns-wip ${filter==='wip'?'nstat-active':''}" data-filter="wip"><div class="nstat-dot"></div>${c.wip} 進行中</button><button class="nstat ns-todo ${filter==='todo'?'nstat-active':''}" data-filter="todo"><div class="nstat-dot"></div>${c.all - c.wip} 未着手</button>`;
     ns.querySelectorAll('.nstat').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
   }
 
@@ -368,7 +368,7 @@ function render() {
   const mf = document.getElementById('mob-frac'); if(mf) mf.textContent = `${c.all}`;
   const ms = document.getElementById('mob-stats');
   if(ms) {
-    ms.innerHTML = `<button class="stat-pill sp-all ${filter==='all'?'sp-active':''}" data-filter="all"><div class="stat-dot"></div>${c.total} すべて</button><button class="stat-pill sp-wip ${filter==='wip'?'sp-active':''}" data-filter="wip"><div class="stat-dot"></div>${c.wip} 進行中</button><button class="stat-pill sp-todo ${filter==='todo'?'sp-active':''}" data-filter="todo"><div class="stat-dot"></div>${c.all - c.wip} 未着手</button>`;
+    ms.innerHTML = `<button class="stat-pill sp-all ${filter==='all'?'sp-active':''}" data-filter="all"><div class="stat-dot"></div>${c.all} すべて(未完了)</button><button class="stat-pill sp-wip ${filter==='wip'?'sp-active':''}" data-filter="wip"><div class="stat-dot"></div>${c.wip} 進行中</button><button class="stat-pill sp-todo ${filter==='todo'?'sp-active':''}" data-filter="todo"><div class="stat-dot"></div>${c.all - c.wip} 未着手</button>`;
     ms.querySelectorAll('.stat-pill').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
   }
 
@@ -379,7 +379,7 @@ function render() {
   renderSidebar(c);
 
   // Toolbar
-  const tt = document.getElementById('tb-title'); if(tt) tt.textContent = FTITLES[filter]||'すべて';
+  const tt = document.getElementById('tb-title'); if(tt) tt.textContent = FTITLES[filter]||'すべて(未完了)';
   const tdb = document.getElementById('tb-done-toggle');
   if(tdb) tdb.style.display = 'none';
 
@@ -396,7 +396,7 @@ function renderCatTabs(c) {
   const el = document.getElementById('cat-tabs');
   if (!el) return;
   const tabs = [
-    { key:'all', label:'すべて' },
+    { key:'all', label:'すべて(未完了)' },
     ...Object.keys(CAT).map(k => ({ key: k, label: CAT[k] })),
     { key:'done', label:'完了済み' },
   ];
@@ -418,7 +418,7 @@ function renderSidebar(c) {
     <div class="sb-section">
       <div class="sb-label">ビュー</div>
       <button class="sb-item ${filter==='all'?'active':''}" data-filter="all">
-        <span style="font-size:13px">📋</span> すべて <span class="sb-count">${c.total}</span>
+        <span style="font-size:13px">📋</span> すべて(未完了) <span class="sb-count">${c.all}</span>
       </button>
       <button class="sb-item ${filter==='wip'?'active':''}" data-filter="wip">
         <span class="sb-dot" style="background:var(--wip)"></span> 進行中 <span class="sb-count">${c.wip}</span>
