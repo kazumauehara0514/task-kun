@@ -633,7 +633,7 @@ async function syncPull() {
   const {data,error} = await supabaseClient.from('tasks').select('*');
   if (error) throw error; if (!data) return;
   const m = new Map(tasks.map(t=>[t.id,t]));
-  data.forEach(r => { const rt={id:r.id,title:r.title,category:r.category||'uncategorized',priority:r.priority||'mid',due:r.due||null,status:r.status||'todo',done:!!r.done,description:r.description||'',tags:r.tags||[],createdAt:r.created_at,updatedAt:r.updated_at}; migrateStatus(rt); const l=m.get(r.id); if(!l||r.updated_at>(l.updatedAt||0))m.set(r.id,rt); });
+  data.forEach(r => { const rua=new Date(r.updated_at).getTime()||0; const rt={id:r.id,title:r.title,category:r.category||'uncategorized',priority:r.priority||'mid',due:r.due||null,status:r.status||'todo',done:!!r.done,description:r.description||'',tags:r.tags||[],createdAt:new Date(r.created_at).getTime()||Date.now(),updatedAt:rua}; migrateStatus(rt); const l=m.get(r.id); const lua=typeof l?.updatedAt==='number'?l.updatedAt:new Date(l?.updatedAt||0).getTime()||0; if(!l||rua>lua)m.set(r.id,rt); });
   tasks = Array.from(m.values()); save(); render();
   const ri = new Set(data.map(d=>d.id));
   tasks.filter(t=>!ri.has(t.id)).forEach(t=>syncPush(t));
@@ -649,7 +649,7 @@ async function syncDel(id) {
 function handleRemote(p) {
   const {eventType,new:n,old:o} = p;
   if (eventType==='DELETE'&&o) { tasks=tasks.filter(t=>t.id!==o.id); }
-  else if (n) { const rt={id:n.id,title:n.title,category:n.category||'uncategorized',priority:n.priority||'mid',due:n.due||null,status:n.status||'todo',done:!!n.done,description:n.description||'',tags:n.tags||[],createdAt:n.created_at,updatedAt:n.updated_at}; migrateStatus(rt); const i=tasks.findIndex(t=>t.id===n.id); if(i>=0){if(n.updated_at>(tasks[i].updatedAt||0))tasks[i]=rt;}else tasks.unshift(rt); }
+  else if (n) { const rua=new Date(n.updated_at).getTime()||0; const rt={id:n.id,title:n.title,category:n.category||'uncategorized',priority:n.priority||'mid',due:n.due||null,status:n.status||'todo',done:!!n.done,description:n.description||'',tags:n.tags||[],createdAt:new Date(n.created_at).getTime()||Date.now(),updatedAt:rua}; migrateStatus(rt); const i=tasks.findIndex(t=>t.id===n.id); if(i>=0){const lua=typeof tasks[i].updatedAt==='number'?tasks[i].updatedAt:new Date(tasks[i].updatedAt||0).getTime()||0;if(rua>lua)tasks[i]=rt;}else tasks.unshift(rt); }
   save(); render();
 }
 
