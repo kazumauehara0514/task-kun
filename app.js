@@ -358,8 +358,8 @@ function render() {
   const nd = document.getElementById('nav-date'); if(nd) nd.textContent = ds;
   const ns = document.getElementById('nav-stats');
   if(ns) {
-    ns.innerHTML = `<button class="nstat ns-wip ${filter==='wip'?'nstat-active':''}" data-filter="wip"><div class="nstat-dot"></div>${c.wip} 進行中</button><button class="nstat ns-todo ${filter==='todo'?'nstat-active':''}" data-filter="todo"><div class="nstat-dot"></div>${c.all - c.wip} 未着手</button>`;
-    ns.querySelectorAll('.nstat').forEach(b => b.addEventListener('click', () => { filter = filter === b.dataset.filter ? 'all' : b.dataset.filter; render(); }));
+    ns.innerHTML = `<button class="nstat ns-all ${filter==='all'?'nstat-active':''}" data-filter="all"><div class="nstat-dot"></div>${c.total} すべて</button><button class="nstat ns-wip ${filter==='wip'?'nstat-active':''}" data-filter="wip"><div class="nstat-dot"></div>${c.wip} 進行中</button><button class="nstat ns-todo ${filter==='todo'?'nstat-active':''}" data-filter="todo"><div class="nstat-dot"></div>${c.all - c.wip} 未着手</button>`;
+    ns.querySelectorAll('.nstat').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
   }
 
   // Mobile header
@@ -367,8 +367,8 @@ function render() {
   const mf = document.getElementById('mob-frac'); if(mf) mf.textContent = `${c.done}/${c.total}`;
   const ms = document.getElementById('mob-stats');
   if(ms) {
-    ms.innerHTML = `<button class="stat-pill sp-wip ${filter==='wip'?'sp-active':''}" data-filter="wip"><div class="stat-dot"></div>${c.wip} 進行中</button><button class="stat-pill sp-todo ${filter==='todo'?'sp-active':''}" data-filter="todo"><div class="stat-dot"></div>${c.all - c.wip} 未着手</button>`;
-    ms.querySelectorAll('.stat-pill').forEach(b => b.addEventListener('click', () => { filter = filter === b.dataset.filter ? 'all' : b.dataset.filter; render(); }));
+    ms.innerHTML = `<button class="stat-pill sp-all ${filter==='all'?'sp-active':''}" data-filter="all"><div class="stat-dot"></div>${c.total} すべて</button><button class="stat-pill sp-wip ${filter==='wip'?'sp-active':''}" data-filter="wip"><div class="stat-dot"></div>${c.wip} 進行中</button><button class="stat-pill sp-todo ${filter==='todo'?'sp-active':''}" data-filter="todo"><div class="stat-dot"></div>${c.all - c.wip} 未着手</button>`;
+    ms.querySelectorAll('.stat-pill').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
   }
 
   // Cat tabs (mobile)
@@ -418,6 +418,12 @@ function renderSidebar(c) {
       <div class="sb-label">ビュー</div>
       <button class="sb-item ${filter==='all'?'active':''}" data-filter="all">
         <span style="font-size:13px">📋</span> すべて <span class="sb-count">${c.total}</span>
+      </button>
+      <button class="sb-item ${filter==='wip'?'active':''}" data-filter="wip">
+        <span class="sb-dot" style="background:var(--wip)"></span> 進行中 <span class="sb-count">${c.wip}</span>
+      </button>
+      <button class="sb-item ${filter==='todo'?'active':''}" data-filter="todo">
+        <span class="sb-dot" style="background:var(--text4)"></span> 未着手 <span class="sb-count">${c.all - c.wip}</span>
       </button>
     </div>
     <div class="sb-divider"></div>
