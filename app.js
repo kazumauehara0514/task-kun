@@ -660,54 +660,85 @@ function setupViewportFix() {
 
 // ── Lock Screen ──
 const LOCK_PASS_KEY = 'tkun_pass';
-function hashPass(p) { let h=0; for(let i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h|=0;} return h.toString(36); }
+const LOCK_TS_KEY = 'tkun_unlocked_at';
 const LOCK_DURATION = 24 * 60 * 60 * 1000; // 24時間
-function isLocked() {
-  const ts = localStorage.getItem('tkun_unlocked_at');
-  if (!ts) return true;
-  return (Date.now() - Number(ts)) > LOCK_DURATION;
+
+function hashPass(p) {
+  let h = 0;
+  for (let i = 0; i < p.length; i++) { h = ((h << 5) - h) + p.charCodeAt(i); h |= 0; }
+  return 'h_' + h.toString(36);
 }
-function checkLock() {
-  const stored = localStorage.getItem(LOCK_PASS_KEY);
+
+function isUnlocked() {
+  const pass = localStorage.getItem(LOCK_PASS_KEY);
+  if (!pass) return false; // パスワード未設定 → ロック画面を表示
+  const ts = localStorage.getItem(LOCK_TS_KEY);
+  if (!ts) return false;
+  return (Date.now() - Number(ts)) < LOCK_DURATION;
+}
+
+function showLockScreen() {
   const lockEl = document.getElementById('lock-screen');
   if (!lockEl) return;
-  // No password set yet → prompt to create one
-  if (!stored) {
-    document.getElementById('lock-pass').placeholder = '新しいパスワードを設定';
-    document.querySelector('.lock-desc').textContent = 'パスワードを設定してください（初回のみ）';
-    document.getElementById('lock-btn').textContent = '設定する';
-  }
-  if (!isLocked()) { lockEl.classList.add('hidden'); return; }
-  lockEl.classList.remove('hidden');
+  const stored = localStorage.getItem(LOCK_PASS_KEY);
   const inp = document.getElementById('lock-pass');
   const btn = document.getElementById('lock-btn');
   const err = document.getElementById('lock-err');
+  const desc = document.querySelector('.lock-desc');
+
+  // 初回：パスワード設定モード
+  if (!stored) {
+    inp.placeholder = '新しいパスワードを設定';
+    desc.textContent = 'パスワードを設定してください（初回のみ）';
+    btn.textContent = '設定する';
+  } else {
+    inp.placeholder = 'パスワード';
+    desc.textContent = 'パスワードを入力してください';
+    btn.textContent = 'ログイン';
+  }
+
+  lockEl.classList.remove('hidden');
+  inp.value = '';
+  err.textContent = '';
+  inp.focus();
+
   function tryUnlock() {
     const val = inp.value;
-    if (!val) return;
+    if (!val) { err.textContent = 'パスワードを入力してください'; return; }
+
     if (!stored) {
-      // First time: set password
+      // 初回：パスワードを保存
       localStorage.setItem(LOCK_PASS_KEY, hashPass(val));
-      localStorage.setItem('tkun_unlocked_at', Date.now().toString());
+      localStorage.setItem(LOCK_TS_KEY, Date.now().toString());
       lockEl.classList.add('hidden');
       startApp();
     } else if (hashPass(val) === stored) {
-      localStorage.setItem('tkun_unlocked_at', Date.now().toString());
+      // 正しいパスワード
+      localStorage.setItem(LOCK_TS_KEY, Date.now().toString());
       lockEl.classList.add('hidden');
+      err.textContent = '';
       startApp();
     } else {
+      // パスワード間違い
       err.textContent = 'パスワードが違います';
       inp.value = '';
       inp.focus();
     }
   }
-  btn.addEventListener('click', tryUnlock);
-  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); tryUnlock(); } });
-  inp.focus();
+
+  // クリーンにイベント登録（重複防止）
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+  newBtn.addEventListener('click', tryUnlock);
+
+  const newInp = inp.cloneNode(true);
+  inp.parentNode.replaceChild(newInp, inp);
+  newInp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); tryUnlock(); } });
+  newInp.focus();
 }
 
 function logout() {
-  localStorage.removeItem('tkun_unlocked_at');
+  localStorage.removeItem(LOCK_TS_KEY);
   location.reload();
 }
 
@@ -718,8 +749,16 @@ function startApp() {
   if (cfg && cfg.url && cfg.key) initSync().catch(e => console.error('sync:', e));
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 }
+
 function init() {
-  if (!isLocked()) { startApp(); }
-  checkLock();
+  const lockEl = document.getElementById('lock-screen');
+  if (isUnlocked()) {
+    // ログイン済み → ロック画面を非表示にしてアプリ起動
+    if (lockEl) lockEl.classList.add('hidden');
+    startApp();
+  } else {
+    // 未ログイン → ロック画面を表示
+    showLockScreen();
+  }
 }
 init();
