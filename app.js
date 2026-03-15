@@ -774,20 +774,21 @@ function showLockScreen() {
   async function doAuth() {
     const email = document.getElementById('lock-email').value.trim();
     const pass = document.getElementById('lock-pass').value;
+    const errEl = document.getElementById('lock-err');
+    const authBtn = document.getElementById('lock-btn');
 
-    if (!email) { err.textContent = 'メールアドレスを入力してください'; return; }
-    if (!pass) { err.textContent = 'パスワードを入力してください'; return; }
-    if (pass.length < 6) { err.textContent = 'パスワードは6文字以上で入力してください'; return; }
+    if (!email) { errEl.textContent = 'メールアドレスを入力してください'; return; }
+    if (!pass) { errEl.textContent = 'パスワードを入力してください'; return; }
+    if (pass.length < 6) { errEl.textContent = 'パスワードは6文字以上で入力してください'; return; }
 
     if (!supabaseClient) {
-      err.textContent = 'Supabase未設定です。同期設定を先に行ってください';
+      errEl.textContent = 'Supabase未設定です。同期設定を先に行ってください';
       return;
     }
 
-    const authBtn = document.getElementById('lock-btn');
     authBtn.disabled = true;
     authBtn.textContent = '処理中...';
-    err.textContent = '';
+    errEl.textContent = '';
 
     try {
       let result;
@@ -799,10 +800,10 @@ function showLockScreen() {
 
       if (result.error) {
         const msg = result.error.message;
-        if (msg.includes('Invalid login')) err.textContent = 'メールアドレスまたはパスワードが違います';
-        else if (msg.includes('already registered')) err.textContent = 'このメールアドレスは既に登録されています';
-        else if (msg.includes('invalid')) err.textContent = '無効なメールアドレスです';
-        else err.textContent = msg;
+        if (msg.includes('Invalid login')) errEl.textContent = 'メールアドレスまたはパスワードが違います';
+        else if (msg.includes('already registered')) errEl.textContent = 'このメールアドレスは既に登録されています';
+        else if (msg.includes('invalid')) errEl.textContent = '無効なメールアドレスです';
+        else errEl.textContent = msg;
         authBtn.disabled = false;
         updateMode();
         return;
@@ -810,8 +811,8 @@ function showLockScreen() {
 
       if (authMode === 'signup' && result.data?.user && !result.data.session) {
         // メール確認が必要な場合
-        err.style.color = '#2A7A4B';
-        err.textContent = '確認メールを送信しました。メールを確認してからログインしてください。';
+        errEl.style.color = '#2A7A4B';
+        errEl.textContent = '確認メールを送信しました。メールを確認してからログインしてください。';
         authMode = 'login';
         updateMode();
         authBtn.disabled = false;
@@ -823,24 +824,16 @@ function showLockScreen() {
       updateAcctUI(result.data.user);
       startApp();
     } catch (e) {
-      err.textContent = 'エラー: ' + e.message;
+      errEl.textContent = 'エラー: ' + e.message;
       authBtn.disabled = false;
       updateMode();
     }
   }
 
-  // イベント（毎回新しいcloneで置き換えて重複防止）
-  const newBtn = btn.cloneNode(true);
-  btn.parentNode.replaceChild(newBtn, btn);
-  newBtn.addEventListener('click', doAuth);
-
-  const newPass = passInp.cloneNode(true);
-  passInp.parentNode.replaceChild(newPass, passInp);
-  newPass.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAuth(); } });
-
-  const newEmail = emailInp.cloneNode(true);
-  emailInp.parentNode.replaceChild(newEmail, emailInp);
-  newEmail.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('lock-pass').focus(); } });
+  // イベント（onclick上書きで重複防止）
+  btn.onclick = doAuth;
+  passInp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); doAuth(); } };
+  emailInp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('lock-pass').focus(); } };
 }
 
 function updateAcctUI(user) {
