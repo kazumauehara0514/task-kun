@@ -7,7 +7,7 @@ const CAT_COLORS = ['#2563EB','#DB2777','#A8A49C','#059669','#D97706','#7C3AED',
 let CAT = { ...DEFAULT_CATS };
 const PRI = { high: '高', mid: '中', low: '低' };
 const STATUS = { todo: '未着手', wip: '進行中', done: '完了' };
-let FTITLES = { all: 'すべてのタスク', done: '完了済みタスク' };
+let FTITLES = { all: 'すべてのタスク', done: '完了済みタスク', wip: '進行中タスク', todo: '未着手タスク' };
 
 function loadCategories() {
   const custom = JSON.parse(localStorage.getItem('tkun_cats') || '[]');
@@ -357,13 +357,19 @@ function render() {
   // Desktop nav
   const nd = document.getElementById('nav-date'); if(nd) nd.textContent = ds;
   const ns = document.getElementById('nav-stats');
-  if(ns) ns.innerHTML = `<div class="nstat ns-wip"><div class="nstat-dot"></div>${c.wip} 進行中</div><div class="nstat ns-todo"><div class="nstat-dot"></div>${c.all - c.wip} 未着手</div>`;
+  if(ns) {
+    ns.innerHTML = `<button class="nstat ns-wip ${filter==='wip'?'nstat-active':''}" data-filter="wip"><div class="nstat-dot"></div>${c.wip} 進行中</button><button class="nstat ns-todo ${filter==='todo'?'nstat-active':''}" data-filter="todo"><div class="nstat-dot"></div>${c.all - c.wip} 未着手</button>`;
+    ns.querySelectorAll('.nstat').forEach(b => b.addEventListener('click', () => { filter = filter === b.dataset.filter ? 'all' : b.dataset.filter; render(); }));
+  }
 
   // Mobile header
   const md = document.getElementById('mob-date'); if(md) md.textContent = ds;
   const mf = document.getElementById('mob-frac'); if(mf) mf.textContent = `${c.done}/${c.total}`;
   const ms = document.getElementById('mob-stats');
-  if(ms) ms.innerHTML = `<div class="stat-pill sp-wip"><div class="stat-dot"></div>${c.wip} 進行中</div><div class="stat-pill sp-todo"><div class="stat-dot"></div>${c.all - c.wip} 未着手</div>`;
+  if(ms) {
+    ms.innerHTML = `<button class="stat-pill sp-wip ${filter==='wip'?'sp-active':''}" data-filter="wip"><div class="stat-dot"></div>${c.wip} 進行中</button><button class="stat-pill sp-todo ${filter==='todo'?'sp-active':''}" data-filter="todo"><div class="stat-dot"></div>${c.all - c.wip} 未着手</button>`;
+    ms.querySelectorAll('.stat-pill').forEach(b => b.addEventListener('click', () => { filter = filter === b.dataset.filter ? 'all' : b.dataset.filter; render(); }));
+  }
 
   // Cat tabs (mobile)
   renderCatTabs(c);
@@ -448,6 +454,21 @@ function renderTasks() {
       el.innerHTML = '<div class="task-section">' +
         `<div class="sec-head">— 完了済み (${done.length})</div>` +
         done.map((t,i) => renderRow(t, i+1)).join('') +
+        '</div>';
+    }
+    return;
+  }
+
+  // Status filter (wip / todo)
+  if (filter === 'wip' || filter === 'todo') {
+    const statusFiltered = tasks.filter(t => t.status === filter);
+    const label = filter === 'wip' ? '進行中' : '未着手';
+    if (statusFiltered.length === 0) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>${label}のタスクはありません</p></div>`;
+    } else {
+      el.innerHTML = '<div class="task-section">' +
+        `<div class="sec-head">— ${label} (${statusFiltered.length})</div>` +
+        statusFiltered.map((t,i) => renderRow(t, i+1)).join('') +
         '</div>';
     }
     return;

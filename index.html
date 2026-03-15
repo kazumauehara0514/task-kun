@@ -48,7 +48,9 @@ body{
 .nav-date{font-size:10px;color:rgba(255,255,255,0.42);font-family:'DM Mono',monospace;letter-spacing:0.1em;text-transform:uppercase}
 .nav-spacer{flex:1}
 .nav-stats{display:flex;gap:8px;position:relative;z-index:2}
-.nstat{font-size:9px;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:999px;display:flex;align-items:center;gap:5px}
+.nstat{font-size:9px;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:999px;display:flex;align-items:center;gap:5px;border:none;cursor:pointer;transition:all .15s}
+.nstat:active{transform:scale(.95)}
+.nstat-active{outline:2px solid rgba(255,255,255,0.5);outline-offset:1px}
 .ns-done{background:rgba(110,231,160,0.18);color:#6EE7A0}
 .ns-wip{background:rgba(255,217,122,0.18);color:#FFD97A}
 .ns-todo{background:rgba(255,255,255,0.10);color:rgba(255,255,255,0.42)}
@@ -94,6 +96,9 @@ body{
 .sp-done{background:rgba(110,231,160,0.18);color:#6EE7A0}
 .sp-wip{background:rgba(255,217,122,0.18);color:#FFD97A}
 .sp-todo{background:rgba(255,255,255,0.10);color:rgba(255,255,255,0.45)}
+.stat-pill{border:none;cursor:pointer;transition:all .15s}
+.stat-pill:active{transform:scale(.95)}
+.sp-active{outline:2px solid rgba(255,255,255,0.5);outline-offset:1px}
 .sp-done .stat-dot,.sp-todo .stat-dot{width:6px;height:6px;border-radius:50%}
 .sp-done .stat-dot{background:#6EE7A0}
 .sp-todo .stat-dot{background:rgba(255,255,255,0.35)}
