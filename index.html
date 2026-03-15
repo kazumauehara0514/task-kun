@@ -42,12 +42,12 @@ body{
   align-items:center;padding:0 24px;gap:16px;flex-shrink:0;
   position:relative;overflow:hidden;
 }
-.topnav::after{content:'';position:absolute;right:-20px;top:-20px;width:90px;height:90px;border:1px solid rgba(255,255,255,0.06);border-radius:50%}
-.topnav::before{content:'';position:absolute;right:20px;top:10px;width:45px;height:45px;border:1px solid rgba(255,255,255,0.06);border-radius:50%}
+.topnav::after{content:'';position:absolute;right:-20px;top:-20px;width:90px;height:90px;border:1px solid rgba(255,255,255,0.06);border-radius:50%;pointer-events:none}
+.topnav::before{content:'';position:absolute;right:20px;top:10px;width:45px;height:45px;border:1px solid rgba(255,255,255,0.06);border-radius:50%;pointer-events:none}
 .nav-logo{font-size:15px;font-weight:600;color:#fff;letter-spacing:-0.5px}
 .nav-date{font-size:10px;color:rgba(255,255,255,0.42);font-family:'DM Mono',monospace;letter-spacing:0.1em;text-transform:uppercase}
 .nav-spacer{flex:1}
-.nav-stats{display:flex;gap:8px}
+.nav-stats{display:flex;gap:8px;position:relative;z-index:2}
 .nstat{font-size:9px;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:999px;display:flex;align-items:center;gap:5px}
 .ns-done{background:rgba(110,231,160,0.18);color:#6EE7A0}
 .ns-wip{background:rgba(255,217,122,0.18);color:#FFD97A}
@@ -58,13 +58,13 @@ body{
 .nav-sync{
   width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);
   border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  color:rgba(255,255,255,0.6);transition:background .15s;
+  color:rgba(255,255,255,0.6);transition:background .15s;position:relative;z-index:2;
 }
 .nav-sync:hover{background:rgba(255,255,255,0.18)}
 .nav-sync svg{width:14px;height:14px}
 .nav-avatar{
   width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.15);
-  display:flex;align-items:center;justify-content:center;
+  display:flex;align-items:center;justify-content:center;position:relative;z-index:2;
   font-size:11px;font-weight:600;color:rgba(255,255,255,0.8);
 }
 
@@ -74,8 +74,8 @@ body{
   padding-top:calc(14px + env(safe-area-inset-top,0px));
   flex-shrink:0;position:relative;overflow:hidden;
 }
-.mob-header::after{content:'';position:absolute;right:-14px;top:-14px;width:80px;height:80px;border:1px solid rgba(255,255,255,0.07);border-radius:50%}
-.mob-header::before{content:'';position:absolute;right:8px;top:8px;width:40px;height:40px;border:1px solid rgba(255,255,255,0.07);border-radius:50%}
+.mob-header::after{content:'';position:absolute;right:-14px;top:-14px;width:80px;height:80px;border:1px solid rgba(255,255,255,0.07);border-radius:50%;pointer-events:none}
+.mob-header::before{content:'';position:absolute;right:8px;top:8px;width:40px;height:40px;border:1px solid rgba(255,255,255,0.07);border-radius:50%;pointer-events:none}
 .hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .hdr-date{font-size:10px;letter-spacing:0.13em;color:rgba(255,255,255,0.4);font-family:'DM Mono',monospace;text-transform:uppercase}
 .hdr-sync{
@@ -89,7 +89,7 @@ body{
 .hdr-title strong{font-weight:600}
 .hdr-frac{font-size:24px;font-weight:600;color:#fff;font-family:'DM Mono',monospace;letter-spacing:-1px;line-height:1;text-align:right}
 .hdr-frac-label{font-size:9px;color:rgba(255,255,255,0.38);font-family:'DM Mono',monospace;letter-spacing:0.08em;margin-top:3px;text-align:right}
-.hdr-stats{display:flex;gap:6px;margin-bottom:8px}
+.hdr-stats{display:flex;gap:6px;margin-bottom:8px;position:relative;z-index:1}
 .stat-pill{font-size:10px;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:999px;display:flex;align-items:center;gap:5px}
 .sp-done{background:rgba(110,231,160,0.18);color:#6EE7A0}
 .sp-wip{background:rgba(255,217,122,0.18);color:#FFD97A}
@@ -436,6 +436,31 @@ body{
 .sync-status.err{display:block;background:rgba(255,107,107,.12);color:#C0392B}
 
 /* ── LOCK SCREEN ── */
+/* ── ACCOUNT MENU ── */
+.acct-wrap{position:relative;z-index:2}
+.acct-btn{
+  width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:rgba(255,255,255,0.8);
+  border:none;cursor:pointer;transition:background .15s;
+}
+.acct-btn:hover{background:rgba(255,255,255,0.25)}
+.acct-menu{
+  position:absolute;right:0;top:calc(100% + 8px);
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;width:160px;
+  display:none;z-index:100;
+}
+.acct-menu.open{display:block}
+.acct-opt{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+  border:none;background:none;width:100%;text-align:left;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text2);
+  border-radius:7px;transition:background .1s;
+}
+.acct-opt:hover{background:var(--bg2)}
+.acct-opt svg{width:14px;height:14px;flex-shrink:0}
+
 .lock-screen{
   position:fixed;inset:0;z-index:9999;background:var(--dark);
   display:flex;align-items:center;justify-content:center;
@@ -531,16 +556,26 @@ body{
     <div class="nav-spacer"></div>
     <div class="nav-stats" id="nav-stats"></div>
     <button class="nav-sync" id="nav-sync-btn" title="同期設定"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 0110.89-3.48M14 8a6 6 0 01-10.89 3.48"/><path d="M14 2v4h-4M2 14v-4h4"/></svg></button>
-    <button class="nav-sync" id="nav-logout-btn" title="ログアウト"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8"/></svg></button>
+    <div class="acct-wrap">
+      <button class="acct-btn" id="nav-acct-btn">K</button>
+      <div class="acct-menu" id="nav-acct-menu">
+        <button class="acct-opt" id="nav-logout-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8"/></svg>ログアウト</button>
+      </div>
+    </div>
   </nav>
 
   <!-- ── MOBILE HEADER ── -->
   <header class="mob-header">
     <div class="hdr-top">
       <div class="hdr-date" id="mob-date"></div>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;position:relative;z-index:2">
         <button class="hdr-sync" id="mob-sync-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 0110.89-3.48M14 8a6 6 0 01-10.89 3.48"/><path d="M14 2v4h-4M2 14v-4h4"/></svg></button>
-        <button class="hdr-sync" id="mob-logout-btn" title="ログアウト"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8"/></svg></button>
+        <div class="acct-wrap">
+          <button class="acct-btn" id="mob-acct-btn">K</button>
+          <div class="acct-menu" id="mob-acct-menu">
+            <button class="acct-opt" id="mob-logout-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8"/></svg>ログアウト</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="hdr-main">

@@ -631,6 +631,22 @@ function bindEvents() {
   document.getElementById('modal-close').addEventListener('click', closeSyncModal);
   document.getElementById('modal-bg').addEventListener('click', closeSyncModal);
   document.getElementById('modal-save').addEventListener('click', saveSyncCfg);
+  // Account menu
+  function toggleAcctMenu(menuId) {
+    const menu = document.getElementById(menuId);
+    const isOpen = menu.classList.contains('open');
+    // close all menus first
+    document.querySelectorAll('.acct-menu').forEach(m => m.classList.remove('open'));
+    if (!isOpen) {
+      menu.classList.add('open');
+      setTimeout(() => document.addEventListener('click', function closeAcct(e) {
+        if (!menu.contains(e.target)) { menu.classList.remove('open'); }
+        document.removeEventListener('click', closeAcct);
+      }), 10);
+    }
+  }
+  document.getElementById('nav-acct-btn').addEventListener('click', (e) => { e.stopPropagation(); toggleAcctMenu('nav-acct-menu'); });
+  document.getElementById('mob-acct-btn').addEventListener('click', (e) => { e.stopPropagation(); toggleAcctMenu('mob-acct-menu'); });
   // Logout
   document.getElementById('nav-logout-btn').addEventListener('click', logout);
   document.getElementById('mob-logout-btn').addEventListener('click', logout);
