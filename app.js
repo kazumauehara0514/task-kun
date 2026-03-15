@@ -570,7 +570,13 @@ async function saveSyncCfg() {
   const st = document.getElementById('sync-status');
   if (!url || !key) { setSyncCfg(null); supabaseClient = null; st.className='sync-status'; closeSyncModal(); return; }
   setSyncCfg({ url, key }); st.className='sync-status'; st.textContent='接続中...'; st.style.display='block';
-  try { await initSync(); st.className='sync-status ok'; st.textContent='同期が有効になりました'; setTimeout(closeSyncModal, 1200); }
+  try {
+    // Supabaseクライアントを（再）作成
+    await loadSB();
+    supabaseClient = window.supabase.createClient(url, key);
+    st.className='sync-status ok'; st.textContent='設定を保存しました';
+    setTimeout(() => { closeSyncModal(); location.reload(); }, 1200);
+  }
   catch(e) { st.className='sync-status err'; st.textContent='エラー: '+e.message; }
 }
 
@@ -720,6 +726,14 @@ function showLockScreen() {
     authMode = 'signup';
     updateMode();
   });
+
+  // 同期設定ボタン
+  const setupBtn = document.getElementById('lock-setup-btn');
+  if (setupBtn) {
+    setupBtn.addEventListener('click', () => {
+      openSyncModal();
+    });
+  }
 
   async function doAuth() {
     const email = document.getElementById('lock-email').value.trim();
