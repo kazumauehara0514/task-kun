@@ -435,6 +435,35 @@ body{
 .sync-status.ok{display:block;background:rgba(110,231,160,.12);color:var(--done-text)}
 .sync-status.err{display:block;background:rgba(255,107,107,.12);color:#C0392B}
 
+/* ── LOCK SCREEN ── */
+.lock-screen{
+  position:fixed;inset:0;z-index:9999;background:var(--dark);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .3s;
+}
+.lock-screen.hidden{opacity:0;pointer-events:none}
+.lock-box{
+  text-align:center;width:min(320px,calc(100vw - 48px));
+  padding:40px 24px;background:var(--surface);border-radius:16px;
+  box-shadow:0 16px 48px rgba(0,0,0,.3);
+}
+.lock-icon{font-size:40px;margin-bottom:12px}
+.lock-title{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-0.5px;margin-bottom:4px}
+.lock-desc{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:20px}
+.lock-input{
+  width:100%;padding:12px 14px;border:1.5px solid var(--border2);border-radius:8px;
+  font-size:15px;background:var(--bg);color:var(--text);outline:none;
+  font-family:'DM Sans',sans-serif;text-align:center;margin-bottom:12px;
+}
+.lock-input:focus{border-color:var(--text4)}
+.lock-btn{
+  width:100%;padding:12px;background:var(--dark);color:#fff;border:none;
+  border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:opacity .15s;
+}
+.lock-btn:active{opacity:.7}
+.lock-err{font-size:11px;color:#EF4444;margin-top:10px;min-height:16px;font-family:'DM Mono',monospace}
+
 /* ── DESKTOP ── */
 @media(min-width:768px){
   .topnav{display:flex;height:56px;padding:0 28px}
@@ -609,6 +638,18 @@ body{
 <!-- ── DETAIL PANEL ── -->
 <div class="detail-bg" id="detail-bg"></div>
 <div class="detail-panel" id="detail-panel"></div>
+
+<!-- ── LOCK SCREEN ── -->
+<div class="lock-screen" id="lock-screen">
+  <div class="lock-box">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-title">タスクくん</div>
+    <div class="lock-desc">パスワードを入力してください</div>
+    <input class="lock-input" type="password" id="lock-pass" placeholder="パスワード" autocomplete="current-password">
+    <button class="lock-btn" id="lock-btn">ログイン</button>
+    <div class="lock-err" id="lock-err"></div>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>

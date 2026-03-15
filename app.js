@@ -655,11 +655,58 @@ function setupViewportFix() {
   });
 }
 
+// ── Lock Screen ──
+const LOCK_PASS_KEY = 'tkun_pass';
+function hashPass(p) { let h=0; for(let i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h|=0;} return h.toString(36); }
+function isLocked() { return !sessionStorage.getItem('tkun_unlocked'); }
+function checkLock() {
+  const stored = localStorage.getItem(LOCK_PASS_KEY);
+  const lockEl = document.getElementById('lock-screen');
+  if (!lockEl) return;
+  // No password set yet → prompt to create one
+  if (!stored) {
+    document.getElementById('lock-pass').placeholder = '新しいパスワードを設定';
+    document.querySelector('.lock-desc').textContent = 'パスワードを設定してください（初回のみ）';
+    document.getElementById('lock-btn').textContent = '設定する';
+  }
+  if (!isLocked()) { lockEl.classList.add('hidden'); return; }
+  lockEl.classList.remove('hidden');
+  const inp = document.getElementById('lock-pass');
+  const btn = document.getElementById('lock-btn');
+  const err = document.getElementById('lock-err');
+  function tryUnlock() {
+    const val = inp.value;
+    if (!val) return;
+    if (!stored) {
+      // First time: set password
+      localStorage.setItem(LOCK_PASS_KEY, hashPass(val));
+      sessionStorage.setItem('tkun_unlocked', '1');
+      lockEl.classList.add('hidden');
+      startApp();
+    } else if (hashPass(val) === stored) {
+      sessionStorage.setItem('tkun_unlocked', '1');
+      lockEl.classList.add('hidden');
+      startApp();
+    } else {
+      err.textContent = 'パスワードが違います';
+      inp.value = '';
+      inp.focus();
+    }
+  }
+  btn.addEventListener('click', tryUnlock);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); tryUnlock(); } });
+  inp.focus();
+}
+
 // ── Init ──
-function init() {
+function startApp() {
   load(); bindEvents(); render(); setupViewportFix();
   const cfg = getSyncCfg();
   if (cfg && cfg.url && cfg.key) initSync().catch(e => console.error('sync:', e));
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+function init() {
+  if (!isLocked()) { startApp(); }
+  checkLock();
 }
 init();
