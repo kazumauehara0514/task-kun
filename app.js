@@ -469,6 +469,15 @@ function renderTasks() {
   if (filter === 'wip' || filter === 'todo') {
     const statusFiltered = tasks.filter(t => t.status === filter);
     const label = filter === 'wip' ? '進行中' : '未着手';
+    const po2 = { high:0, mid:1, low:2 };
+    const so2 = { wip:0, todo:1 };
+    statusFiltered.sort((a,b) => {
+      if (po2[a.priority] !== po2[b.priority]) return po2[a.priority] - po2[b.priority];
+      if (a.due && b.due) return a.due < b.due ? -1 : 1;
+      if (a.due) return -1; if (b.due) return 1;
+      if ((so2[a.status]||1) !== (so2[b.status]||1)) return (so2[a.status]||1) - (so2[b.status]||1);
+      return b.createdAt - a.createdAt;
+    });
     if (statusFiltered.length === 0) {
       el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>${label}のタスクはありません</p></div>`;
     } else {
@@ -483,13 +492,13 @@ function renderTasks() {
   const filtered = tasks.filter(t => filter==='all' || t.category===filter);
   const active = filtered.filter(t => t.status !== 'done');
 
-  const so = { wip:0, todo:1 };
   const po = { high:0, mid:1, low:2 };
+  const so = { wip:0, todo:1 };
   active.sort((a,b) => {
-    if ((so[a.status]||1) !== (so[b.status]||1)) return (so[a.status]||1) - (so[b.status]||1);
     if (po[a.priority] !== po[b.priority]) return po[a.priority] - po[b.priority];
     if (a.due && b.due) return a.due < b.due ? -1 : 1;
     if (a.due) return -1; if (b.due) return 1;
+    if ((so[a.status]||1) !== (so[b.status]||1)) return (so[a.status]||1) - (so[b.status]||1);
     return b.createdAt - a.createdAt;
   });
 
