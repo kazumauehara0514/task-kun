@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="タスクくん">
+<meta name="theme-color" content="#3D3D3D">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%233D3D3D'/><path d='M28 52L42 66L72 36' stroke='%236EE7A0' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+<title>タスクくん</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F9F9F7;--bg2:#F5F3EE;--surface:#fff;
+  --border:#EAE8E2;--border2:#E8E5DE;--border3:#F0EDE7;
+  --text:#2E2E2E;--text2:#6B6760;--text3:#A8A49C;--text4:#C8C4BC;--text5:#D4D0C8;
+  --dark:#3D3D3D;--dark2:#2C2C2C;
+  --done:#6EE7A0;--done-border:#B6EACB;--done-bg:#F0FBF4;--done-text:#2A7A4B;
+  --wip:#FFD97A;--wip-border:#FFD97A;--wip-bg:#FFF7E6;--wip-text:#C07000;
+  --cat-work:#2563EB;--cat-work-bg:#EFF6FF;--cat-work-border:#BFDBFE;
+  --cat-priv:#DB2777;--cat-priv-bg:#FDF2F8;--cat-priv-border:#FBCFE8;
+  --cat-uncat:#A8A49C;
+  --dd-overdue:#FF6B6B;--dd-today:#FFD97A;--dd-soon:#A8DAFF;--dd-later:#CEC6FF;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
+  font-size:15px;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+}
+
+/* ── APP SHELL ── */
+.app{display:flex;flex-direction:column;height:100dvh;height:100vh}
+@supports(height:100svh){.app{height:100svh}}
+
+/* ── DESKTOP TOP NAV ── */
+.topnav{
+  display:none;background:var(--dark);height:52px;
+  align-items:center;padding:0 24px;gap:16px;flex-shrink:0;
+  position:relative;overflow:hidden;
+}
+.topnav::after{content:'';position:absolute;right:-20px;top:-20px;width:90px;height:90px;border:1px solid rgba(255,255,255,0.06);border-radius:50%}
+.topnav::before{content:'';position:absolute;right:20px;top:10px;width:45px;height:45px;border:1px solid rgba(255,255,255,0.06);border-radius:50%}
+.nav-logo{font-size:15px;font-weight:600;color:#fff;letter-spacing:-0.5px}
+.nav-date{font-size:10px;color:rgba(255,255,255,0.42);font-family:'DM Mono',monospace;letter-spacing:0.1em;text-transform:uppercase}
+.nav-spacer{flex:1}
+.nav-stats{display:flex;gap:8px}
+.nstat{font-size:9px;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:999px;display:flex;align-items:center;gap:5px}
+.ns-done{background:rgba(110,231,160,0.18);color:#6EE7A0}
+.ns-wip{background:rgba(255,217,122,0.18);color:#FFD97A}
+.ns-todo{background:rgba(255,255,255,0.10);color:rgba(255,255,255,0.42)}
+.nstat-dot{width:5px;height:5px;border-radius:50%}
+.ns-done .nstat-dot{background:#6EE7A0}
+.ns-todo .nstat-dot{background:rgba(255,255,255,0.3)}
+.nav-sync{
+  width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,0.6);transition:background .15s;
+}
+.nav-sync:hover{background:rgba(255,255,255,0.18)}
+.nav-sync svg{width:14px;height:14px}
+.nav-avatar{
+  width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:rgba(255,255,255,0.8);
+}
+
+/* ── MOBILE HEADER ── */
+.mob-header{
+  background:var(--dark);padding:14px 18px 16px;
+  padding-top:calc(14px + env(safe-area-inset-top,0px));
+  flex-shrink:0;position:relative;overflow:hidden;
+}
+.mob-header::after{content:'';position:absolute;right:-14px;top:-14px;width:80px;height:80px;border:1px solid rgba(255,255,255,0.07);border-radius:50%}
+.mob-header::before{content:'';position:absolute;right:8px;top:8px;width:40px;height:40px;border:1px solid rgba(255,255,255,0.07);border-radius:50%}
+.hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.hdr-date{font-size:10px;letter-spacing:0.13em;color:rgba(255,255,255,0.4);font-family:'DM Mono',monospace;text-transform:uppercase}
+.hdr-sync{
+  width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,0.5);position:relative;z-index:1;
+}
+.hdr-sync svg{width:14px;height:14px}
+.hdr-main{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px}
+.hdr-title{font-size:26px;font-weight:300;color:#fff;letter-spacing:-0.8px;line-height:1.1}
+.hdr-title strong{font-weight:600}
+.hdr-frac{font-size:24px;font-weight:600;color:#fff;font-family:'DM Mono',monospace;letter-spacing:-1px;line-height:1;text-align:right}
+.hdr-frac-label{font-size:9px;color:rgba(255,255,255,0.38);font-family:'DM Mono',monospace;letter-spacing:0.08em;margin-top:3px;text-align:right}
+.hdr-stats{display:flex;gap:6px;margin-bottom:8px}
+.stat-pill{font-size:10px;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:999px;display:flex;align-items:center;gap:5px}
+.sp-done{background:rgba(110,231,160,0.18);color:#6EE7A0}
+.sp-wip{background:rgba(255,217,122,0.18);color:#FFD97A}
+.sp-todo{background:rgba(255,255,255,0.10);color:rgba(255,255,255,0.45)}
+.sp-done .stat-dot,.sp-todo .stat-dot{width:6px;height:6px;border-radius:50%}
+.sp-done .stat-dot{background:#6EE7A0}
+.sp-todo .stat-dot{background:rgba(255,255,255,0.35)}
+.prog-bars{display:flex;gap:3px;height:4px;border-radius:999px;overflow:hidden}
+.pb{height:100%;border-radius:999px;transition:width .4s}
+.pb-done{background:#6EE7A0}.pb-todo{background:rgba(255,255,255,0.15)}
+
+/* ── CATEGORY TABS ── */
+.cat-tabs{
+  display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border3);
+  overflow-x:auto;scrollbar-width:none;flex-shrink:0;background:var(--surface);
+}
+.cat-tabs::-webkit-scrollbar{display:none}
+.ctab{
+  font-size:12px;font-family:'DM Mono',monospace;padding:5px 14px;border-radius:999px;
+  border:1px solid var(--border2);color:var(--text3);white-space:nowrap;cursor:pointer;
+  background:transparent;transition:all .15s;flex-shrink:0;
+}
+.ctab:active{transform:scale(.95)}
+.ctab.active-all{background:var(--dark);color:#fff;border-color:var(--dark)}
+.ctab.active-work{background:var(--cat-work-bg);color:var(--cat-work);border-color:var(--cat-work-border)}
+.ctab.active-personal{background:var(--cat-priv-bg);color:var(--cat-priv);border-color:var(--cat-priv-border)}
+.ctab.active-uncategorized{background:var(--bg2);color:var(--text2);border-color:var(--border)}
+.ctab.active-done{background:var(--done-bg);color:var(--done-text);border-color:var(--done-border)}
+
+/* ── BODY LAYOUT ── */
+.body-layout{display:flex;flex:1;overflow:hidden}
+
+/* ── SIDEBAR (desktop) ── */
+.sidebar{
+  width:220px;display:none;flex-direction:column;flex-shrink:0;
+  background:var(--surface);border-right:1px solid var(--border);
+  overflow-y:auto;padding:16px 0;
+}
+.sb-section{margin-bottom:16px}
+.sb-label{font-size:9px;letter-spacing:0.14em;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;padding:0 16px 8px}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 16px;font-size:12px;color:var(--text2);
+  cursor:pointer;border-left:2px solid transparent;transition:background .1s;
+  border-right:none;border-top:none;border-bottom:none;background:none;
+  width:100%;text-align:left;font-family:'DM Sans',sans-serif;
+}
+.sb-item:hover{background:var(--bg2)}
+.sb-item.active{color:var(--text);font-weight:500;border-left-color:var(--dark);background:var(--bg)}
+.sb-count{margin-left:auto;font-size:9px;font-family:'DM Mono',monospace;color:var(--text4)}
+.sb-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sb-divider{height:1px;background:var(--border);margin:10px 16px}
+.sb-archive{color:var(--text4);font-size:11px}
+.sb-add-cat{display:block;width:calc(100% - 32px);margin:4px 16px;padding:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text4);background:none;border:1px dashed var(--border);border-radius:6px;cursor:pointer;text-align:center}
+.sb-add-cat:hover{background:var(--bg2);color:var(--text3)}
+
+/* ── MAIN CONTENT ── */
+.main-col{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+
+/* ── TOOLBAR (desktop) ── */
+.toolbar{
+  display:none;align-items:center;gap:10px;
+  padding:12px 20px;border-bottom:1px solid var(--border);
+  background:var(--surface);position:sticky;top:0;z-index:2;flex-shrink:0;
+}
+.toolbar-title{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-0.3px}
+.tb-spacer{flex:1}
+.tb-btn{
+  font-family:'DM Mono',monospace;font-size:10px;
+  padding:5px 12px;border-radius:6px;
+  border:1px solid var(--border2);background:transparent;color:var(--text2);
+  cursor:pointer;transition:all .15s;
+}
+.tb-btn:hover{border-color:var(--text4);color:var(--text)}
+.tb-btn.primary{background:var(--dark);color:#fff;border-color:var(--dark)}
+.tb-btn.primary:hover{opacity:.88}
+
+/* ── DESKTOP ADD FORM ── */
+.desk-form{
+  display:none;padding:14px 20px;background:var(--surface);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.desk-form.open{display:block}
+.df-row{display:flex;gap:8px;margin-bottom:8px}
+.df-input{
+  flex:1;font-size:13px;border:1.5px solid var(--border2);border-radius:7px;
+  padding:8px 10px;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none;
+}
+.df-input:focus{border-color:var(--text4)}
+.df-sel{
+  font-family:'DM Mono',monospace;font-size:10px;
+  border:1px solid var(--border2);border-radius:6px;padding:5px 8px;
+  background:var(--bg);color:var(--text2);outline:none;
+}
+.df-btns{display:flex;gap:6px;justify-content:flex-end}
+
+/* ── SCROLL AREA ── */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* ── TASK SECTIONS ── */
+.task-section{padding:0 18px 4px}
+.sec-head{
+  font-size:9px;letter-spacing:0.14em;color:var(--text3);
+  font-family:'DM Mono',monospace;text-transform:uppercase;
+  padding:14px 0 8px;cursor:pointer;user-select:none;
+  display:flex;align-items:center;gap:6px;
+}
+.sec-toggle{font-size:8px;color:var(--text4);transition:transform .2s}
+.sec-toggle.collapsed{transform:rotate(-90deg)}
+
+/* ── TASK ROW ── */
+.trow{
+  display:flex;align-items:center;padding:14px 0;
+  border-bottom:1px solid var(--border3);gap:12px;transition:opacity .15s;
+}
+.trow.is-done{opacity:0.42}
+.tnum{font-size:11px;color:var(--text5);font-family:'DM Mono',monospace;min-width:20px}
+
+/* status icon — 3 states */
+.sicon{
+  width:22px;height:22px;border-radius:50%;border:1.5px solid;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;position:relative;cursor:pointer;transition:all .15s;
+}
+.sicon:active{transform:scale(.85)}
+.sicon.s-todo{border-color:#DDDBD4;background:#F5F5F5}
+.sicon.s-todo::after{content:'';width:5px;height:5px;border-radius:50%;background:var(--text4);opacity:0.4}
+.sicon.s-wip{border-color:var(--wip-border);background:var(--wip-bg)}
+.sicon.s-wip::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--wip-text)}
+.sicon.s-done{border-color:var(--done-border);background:var(--done-bg)}
+.sicon.s-done::before{
+  content:'';position:absolute;width:8px;height:5px;
+  border-left:2px solid var(--done-text);border-bottom:2px solid var(--done-text);
+  transform:rotate(-45deg) translateY(-1px);
+}
+/* shared status menu icon (used in menu & detail) */
+.sm-icon{width:12px;height:12px;border-radius:50%;display:inline-block;flex-shrink:0;border:1.5px solid}
+.sm-todo{border-color:#DDDBD4;background:#F5F5F5}
+.sm-wip{border-color:var(--wip-border);background:var(--wip-bg)}
+.sm-done{border-color:var(--done-border);background:var(--done-bg)}
+
+/* status dropdown menu */
+.status-menu{
+  position:fixed;z-index:500;background:var(--surface);
+  border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);padding:4px;
+  width:140px;
+}
+.sm-opt{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  border:none;background:none;width:100%;text-align:left;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text2);
+  border-radius:7px;transition:background .1s;
+}
+.sm-opt:hover{background:var(--bg2)}
+.sm-opt.active{background:var(--bg);font-weight:500;color:var(--text)}
+
+/* task body */
+.tbody{flex:1;min-width:0}
+.trow{cursor:pointer}
+.ttxt{font-size:15px;color:var(--text);line-height:1.45}
+.ttxt.done-txt{text-decoration:line-through;color:var(--text5)}
+.tmeta{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.pri-high{color:#EF4444;font-weight:600}.pri-mid{color:#C07000}.pri-low{color:#2A7A4B}
+.due-urgent{color:#EF4444;font-weight:600}.due-soon{color:#C07000}.due-ok{color:#2A7A4B}
+.cat-work{color:var(--cat-work);font-weight:500}.cat-personal{color:var(--cat-priv);font-weight:500}.cat-uncategorized{color:var(--cat-uncat)}
+
+/* due inline indicator (subtle) */
+.due-inline{width:5px;height:5px;border-radius:50%;flex-shrink:0;display:inline-block}
+.due-inline.dd-overdue{background:var(--dd-overdue)}
+.due-inline.dd-today{background:var(--dd-today)}
+.due-inline.dd-soon{background:var(--dd-soon)}
+.due-inline.dd-later{background:transparent}
+.due-inline.dd-none{display:none}
+
+/* ── TASK DETAIL PANEL ── */
+.detail-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:400;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.detail-bg.vis{opacity:1;pointer-events:auto}
+.detail-panel{
+  position:fixed;top:0;right:-100%;width:100%;max-width:480px;height:100%;
+  background:var(--surface);z-index:401;
+  transition:right .3s ease;overflow-y:auto;
+  box-shadow:-4px 0 24px rgba(0,0,0,.1);
+}
+.detail-panel.vis{right:0}
+.det-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--surface);z-index:1;
+}
+.det-back{
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text2);
+  background:none;border:none;cursor:pointer;padding:4px 0;
+}
+.det-back:hover{color:var(--text)}
+.det-body{padding:20px}
+.det-status-row{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.det-sel{
+  font-family:'DM Sans',sans-serif;font-size:14px;
+  border:1px solid var(--border2);border-radius:7px;padding:6px 10px;
+  background:var(--bg);color:var(--text);outline:none;
+}
+.det-title{font-size:20px;font-weight:600;line-height:1.4;margin-bottom:20px;letter-spacing:-0.3px}
+.det-title-input{font-size:20px;font-weight:600;line-height:1.4;margin-bottom:20px;letter-spacing:-0.3px;width:100%;border:none;border-bottom:2px solid var(--border);padding:4px 0;background:transparent;color:var(--text);font-family:'DM Sans',sans-serif;outline:none}
+.det-title-input:focus{border-bottom-color:var(--cat-work)}
+.det-date{font-family:'DM Sans',sans-serif;font-size:14px;border:1px solid var(--border2);border-radius:7px;padding:6px 10px;background:var(--bg);color:var(--text);outline:none}
+.det-desc-section{margin-bottom:8px}
+.det-desc{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;border:1px solid var(--border2);border-radius:7px;padding:8px 10px;background:var(--bg);color:var(--text);outline:none;resize:vertical;min-height:60px;line-height:1.5}
+.det-desc:focus{border-color:var(--cat-work)}
+.det-props{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.det-prop{display:flex;align-items:center;gap:12px}
+.det-label{font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);width:80px;flex-shrink:0}
+.det-val{font-size:14px;color:var(--text)}
+.det-val.dd-overdue{color:var(--dd-overdue)}
+.det-val.dd-today{color:#C07000}
+.det-val.dd-soon{color:#3461C1}
+.det-divider{height:1px;background:var(--border);margin:20px 0}
+.det-tag-section{margin-bottom:8px}
+.det-tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text2)}
+.tag-rm{background:none;border:none;color:var(--text4);cursor:pointer;font-size:14px;padding:0 0 0 2px;line-height:1}
+.tag-rm:hover{color:var(--text)}
+.tag-add-row{margin-top:6px}
+.tag-inp{font-family:'DM Sans',sans-serif;font-size:13px;border:1px solid var(--border2);border-radius:7px;padding:6px 10px;background:var(--bg);color:var(--text);outline:none;width:100%}
+.tag-inp:focus{border-color:var(--cat-work)}
+.tag-mini{display:inline-block;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1px 6px;font-size:9px;color:var(--text3);margin-left:2px;vertical-align:middle}
+.det-delete{
+  font-family:'DM Sans',sans-serif;font-size:13px;color:#C0392B;
+  background:none;border:1px solid rgba(192,57,43,.2);border-radius:8px;
+  padding:10px 16px;cursor:pointer;width:100%;transition:all .15s;
+}
+.det-delete:hover{background:rgba(192,57,43,.06);border-color:rgba(192,57,43,.4)}
+
+/* progress bar wip color */
+.pb-wip{background:var(--wip)}
+
+/* ── SUBTASKS ── */
+.subtask-area{margin:6px 0 2px 30px;border-left:2px solid var(--border);padding-left:12px;display:none}
+.subtask-area.open{display:block}
+.sub-row{display:flex;align-items:center;gap:8px;padding:4px 0}
+.sub-check{
+  width:14px;height:14px;border-radius:3px;border:1.5px solid var(--border2);
+  flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.sub-check.checked{background:var(--done-text);border-color:var(--done-text)}
+.sub-check.checked::after{
+  content:'';width:4px;height:7px;
+  border:1.5px solid #fff;border-top:none;border-left:none;
+  transform:rotate(45deg) translate(-.5px,-.5px);
+}
+.sub-txt{font-size:11px;color:var(--text);flex:1}
+.sub-row.sub-done .sub-txt{text-decoration:line-through;color:var(--text4)}
+.sub-del{
+  font-size:12px;color:var(--text4);cursor:pointer;opacity:0;
+  transition:opacity .1s;background:none;border:none;
+}
+.sub-row:hover .sub-del{opacity:1}
+.sub-del:hover{color:#C0392B}
+.sub-add-row{display:flex;gap:6px;margin-top:6px}
+.sub-inp{
+  flex:1;font-size:11px;border:1px solid var(--border2);border-radius:5px;
+  padding:5px 8px;background:var(--bg);font-family:'DM Sans',sans-serif;
+  color:var(--text);outline:none;
+}
+.sub-inp:focus{border-color:var(--text4)}
+.sub-add-btn{
+  font-family:'DM Mono',monospace;font-size:9px;border:1px solid var(--border2);
+  border-radius:5px;padding:5px 10px;background:var(--bg);color:var(--text3);
+  cursor:pointer;transition:all .15s;
+}
+.sub-add-btn:hover{border-color:var(--text4);color:var(--text2)}
+.sub-progress{display:flex;gap:2px;height:2px;border-radius:999px;overflow:hidden;margin:6px 0 0 30px}
+.sub-prog-fill{height:100%;border-radius:999px;background:var(--done);transition:width .3s}
+.sub-prog-empty{height:100%;border-radius:999px;background:var(--border)}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:48px 24px;color:var(--text3)}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:.4}
+.empty p{font-size:13px;font-family:'DM Mono',monospace}
+
+/* ── MOBILE ADD AREA ── */
+.mob-add{
+  flex-shrink:0;padding:10px 13px 14px;
+  padding-bottom:calc(14px + var(--safe-b));
+  border-top:1px solid var(--border3);background:var(--surface);
+  position:sticky;bottom:0;z-index:10;
+}
+.add-row{display:flex;gap:7px}
+.add-inp{
+  flex:1;font-size:14px;border:1.5px solid var(--border2);border-radius:7px;
+  padding:10px 12px;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none;
+}
+.add-inp:focus{border-color:var(--text4)}
+.add-inp::placeholder{color:var(--text3)}
+.add-plus{
+  width:36px;height:36px;background:var(--dark);color:#fff;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;border:none;cursor:pointer;transition:opacity .15s;
+}
+.add-plus:active{opacity:.7}
+.add-sels{display:flex;gap:5px;margin-top:7px}
+.add-sel{
+  font-family:'DM Mono',monospace;font-size:11px;border:1px solid var(--border2);
+  border-radius:999px;padding:5px 12px;color:var(--text3);background:var(--bg);
+  outline:none;-webkit-appearance:none;
+}
+
+/* ── MODAL ── */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.35);
+  opacity:0;transition:opacity .25s;z-index:299;pointer-events:none;
+}
+.modal-bg.vis{opacity:1;pointer-events:auto}
+.modal{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.95);
+  background:var(--surface);border-radius:12px;padding:24px;
+  width:min(380px,calc(100vw - 32px));z-index:300;
+  opacity:0;transition:all .25s;pointer-events:none;
+  box-shadow:0 24px 64px rgba(0,0,0,.18);
+}
+.modal.vis{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:4px;letter-spacing:-0.3px}
+.modal .mdesc{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:16px}
+.modal label{font-size:9px;font-weight:500;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:4px}
+.modal input[type=url],.modal input[type=text]{
+  width:100%;padding:8px 10px;border:1.5px solid var(--border2);border-radius:7px;
+  font-size:12px;background:var(--bg);outline:none;font-family:'DM Mono',monospace;
+  color:var(--text);margin-bottom:12px;
+}
+.modal input:focus{border-color:var(--text4)}
+.modal-btns{display:flex;gap:8px;margin-top:4px}
+.modal-btns .tb-btn{flex:1;padding:8px;text-align:center}
+.modal details{margin-top:16px;font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+.modal summary{cursor:pointer;font-weight:500;margin-bottom:8px;color:var(--text2)}
+.modal ol{padding-left:16px;line-height:2}
+.modal code{background:var(--bg);padding:2px 5px;border-radius:3px;font-size:9px}
+.sync-status{font-size:10px;padding:6px 10px;border-radius:6px;margin-top:10px;display:none;font-family:'DM Mono',monospace}
+.sync-status.ok{display:block;background:rgba(110,231,160,.12);color:var(--done-text)}
+.sync-status.err{display:block;background:rgba(255,107,107,.12);color:#C0392B}
+
+/* ── DESKTOP ── */
+@media(min-width:768px){
+  .topnav{display:flex;height:56px;padding:0 28px}
+  .nav-logo{font-size:17px}
+  .nav-date{font-size:11px}
+  .nstat{font-size:11px;padding:5px 12px}
+  .nav-sync{width:32px;height:32px}
+  .nav-sync svg{width:16px;height:16px}
+  .nav-avatar{width:32px;height:32px;font-size:13px}
+  .mob-header{display:none}
+  .cat-tabs{display:none}
+  .mob-add{display:none}
+  .sidebar{display:flex;width:240px;padding:20px 0}
+  .sb-label{font-size:10px;padding:0 20px 10px}
+  .sb-item{padding:10px 20px;font-size:14px;gap:12px}
+  .sb-count{font-size:11px}
+  .sb-dot{width:9px;height:9px}
+  .sb-divider{margin:12px 20px}
+  .sb-prog-head{font-size:11px;margin-bottom:6px}
+  .sb-progress{padding:0 20px}
+  .sb-prog-bars{height:4px}
+  .toolbar{display:flex;padding:14px 28px}
+  .toolbar-title{font-size:18px}
+  .tb-btn{font-size:12px;padding:7px 16px;border-radius:7px}
+  .main-col{background:var(--bg)}
+  .task-section{padding:0 28px 6px}
+  .sec-head{font-size:9px;padding:16px 0 8px}
+  .trow{
+    padding:14px 18px;background:var(--surface);
+    border:1px solid var(--border);border-radius:10px;
+    margin-bottom:6px;border-bottom:1px solid var(--border);
+    gap:14px;
+  }
+  .trow:hover{border-color:var(--text4)}
+  .tnum{font-size:11px;min-width:20px}
+  .sicon{width:24px;height:24px}
+  .sicon.s-todo::after{width:6px;height:6px}
+  .sicon.s-done::before{width:10px;height:6px;border-left-width:2.5px;border-bottom-width:2.5px}
+  .ttxt{font-size:15px;line-height:1.45}
+  .tmeta{font-size:11px;margin-top:3px}
+  .df-input{font-size:14px;padding:10px 14px}
+  .df-sel{font-size:12px;padding:7px 12px}
+  .subtask-area{margin-left:38px}
+  .sub-txt{font-size:13px}
+  .sub-inp{font-size:13px;padding:7px 10px}
+  .sub-add-btn{font-size:11px;padding:6px 12px}
+  .sub-progress{margin-left:38px;height:3px}
+}
+@media(max-width:767px){
+  .toolbar{display:none}
+  .topnav{display:none}
+  .sidebar{display:none}
+  .scroll{padding-bottom:8px}
+  .detail-panel{max-width:100%}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ── DESKTOP TOP NAV ── -->
+  <nav class="topnav">
+    <div class="nav-logo">タスクくん</div>
+    <div class="nav-date" id="nav-date"></div>
+    <div class="nav-spacer"></div>
+    <div class="nav-stats" id="nav-stats"></div>
+    <button class="nav-sync" id="nav-sync-btn" title="同期設定"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 0110.89-3.48M14 8a6 6 0 01-10.89 3.48"/><path d="M14 2v4h-4M2 14v-4h4"/></svg></button>
+    <div class="nav-avatar" id="nav-avatar">K</div>
+  </nav>
+
+  <!-- ── MOBILE HEADER ── -->
+  <header class="mob-header">
+    <div class="hdr-top">
+      <div class="hdr-date" id="mob-date"></div>
+      <button class="hdr-sync" id="mob-sync-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 0110.89-3.48M14 8a6 6 0 01-10.89 3.48"/><path d="M14 2v4h-4M2 14v-4h4"/></svg></button>
+    </div>
+    <div class="hdr-main">
+      <div class="hdr-title" id="mob-title">タスクくん</div>
+      <div>
+        <div class="hdr-frac" id="mob-frac">0/0</div>
+        <div class="hdr-frac-label">completed</div>
+      </div>
+    </div>
+    <div class="hdr-stats" id="mob-stats"></div>
+  </header>
+
+  <!-- ── MOBILE TABS ── -->
+  <div class="cat-tabs" id="cat-tabs"></div>
+
+  <!-- ── BODY ── -->
+  <div class="body-layout">
+
+    <!-- SIDEBAR (desktop) -->
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <!-- MAIN -->
+    <div class="main-col">
+      <!-- Desktop toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-title" id="tb-title">すべてのタスク</div>
+        <div class="tb-spacer"></div>
+        <button class="tb-btn" id="tb-done-toggle">完了を表示</button>
+        <button class="tb-btn primary" id="tb-add-btn">＋ 追加</button>
+      </div>
+
+      <!-- Desktop add form -->
+      <div class="desk-form" id="desk-form">
+        <div class="df-row">
+          <input class="df-input" type="text" id="df-title" placeholder="新しいタスクを追加..." autocomplete="off">
+        </div>
+        <div class="df-row">
+          <select class="df-sel" id="df-cat"><option value="work">仕事</option><option value="personal">プライベート</option><option value="uncategorized">未分類</option></select>
+          <select class="df-sel" id="df-pri"><option value="mid">優先度: 中</option><option value="high">優先度: 高</option><option value="low">優先度: 低</option></select>
+          <input class="df-sel" type="date" id="df-due">
+          <div class="tb-spacer"></div>
+          <div class="df-btns">
+            <button class="tb-btn" id="df-cancel">キャンセル</button>
+            <button class="tb-btn primary" id="df-submit">追加</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scroll content -->
+      <div class="scroll" id="scroll"></div>
+    </div>
+  </div>
+
+  <!-- ── MOBILE ADD ── -->
+  <div class="mob-add">
+    <div class="add-row">
+      <input class="add-inp" type="text" id="mob-inp" placeholder="新しいタスクを追加..." autocomplete="off">
+      <button class="add-plus" id="mob-add-btn">+</button>
+    </div>
+    <div class="add-sels">
+      <select class="add-sel" id="mob-cat"><option value="work">仕事</option><option value="personal">プライベート</option><option value="uncategorized">未分類</option></select>
+      <select class="add-sel" id="mob-pri"><option value="mid">中 ▾</option><option value="high">高 ▾</option><option value="low">低 ▾</option></select>
+      <input class="add-sel" type="date" id="mob-due" style="flex:1">
+    </div>
+  </div>
+</div>
+
+<!-- ── SYNC MODAL ── -->
+<div class="modal-bg" id="modal-bg"></div>
+<div class="modal" id="sync-modal">
+  <h3>同期設定</h3>
+  <p class="mdesc">Supabase でデバイス間同期（無料）</p>
+  <label>Project URL</label>
+  <input type="url" id="sync-url" placeholder="https://xxx.supabase.co">
+  <label>API Key (anon)</label>
+  <input type="text" id="sync-key" placeholder="eyJhbGciOi...">
+  <div class="modal-btns">
+    <button class="tb-btn" id="modal-close">閉じる</button>
+    <button class="tb-btn primary" id="modal-save">保存して同期</button>
+  </div>
+  <div class="sync-status" id="sync-status"></div>
+  <details>
+    <summary>セットアップ手順</summary>
+    <ol>
+      <li><a href="https://supabase.com" target="_blank" style="color:var(--cat-work)">supabase.com</a> で無料アカウント作成</li>
+      <li>新しいプロジェクトを作成</li>
+      <li>SQL Editor で実行:<br>
+        <code>CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, category TEXT, priority TEXT, due TEXT, done BOOLEAN DEFAULT FALSE, subtasks JSONB DEFAULT '[]', created_at BIGINT, updated_at BIGINT);</code><br>
+        <code>ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;</code><br>
+        <code>CREATE POLICY "allow_all" ON tasks FOR ALL USING (true);</code><br>
+        <code>ALTER PUBLICATION supabase_realtime ADD TABLE tasks;</code>
+      </li>
+      <li>Settings &gt; API から URL と anon key をコピー</li>
+    </ol>
+  </details>
+</div>
+
+<!-- ── DETAIL PANEL ── -->
+<div class="detail-bg" id="detail-bg"></div>
+<div class="detail-panel" id="detail-panel"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
