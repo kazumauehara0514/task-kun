@@ -364,7 +364,7 @@ function render() {
 
   // Mobile header
   const md = document.getElementById('mob-date'); if(md) md.textContent = ds;
-  const mf = document.getElementById('mob-frac'); if(mf) mf.textContent = `${c.done}/${c.total}`;
+  const mf = document.getElementById('mob-frac'); if(mf) mf.textContent = `${c.all}`;
   const ms = document.getElementById('mob-stats');
   if(ms) {
     ms.innerHTML = `<button class="stat-pill sp-all ${filter==='all'?'sp-active':''}" data-filter="all"><div class="stat-dot"></div>${c.total} すべて</button><button class="stat-pill sp-wip ${filter==='wip'?'sp-active':''}" data-filter="wip"><div class="stat-dot"></div>${c.wip} 進行中</button><button class="stat-pill sp-todo ${filter==='todo'?'sp-active':''}" data-filter="todo"><div class="stat-dot"></div>${c.all - c.wip} 未着手</button>`;
