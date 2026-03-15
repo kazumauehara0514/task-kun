@@ -582,7 +582,7 @@ async function loadSB() {
 async function initSync() {
   const cfg = getSyncCfg(); if (!cfg||!cfg.url||!cfg.key) return;
   await loadSB();
-  supabaseClient = window.supabase.createClient(cfg.url, cfg.key);
+  if (!supabaseClient) supabaseClient = window.supabase.createClient(cfg.url, cfg.key);
   await syncPull();
   supabaseClient.channel('tk').on('postgres_changes',{event:'*',schema:'public',table:'tasks'},handleRemote).subscribe();
 }
@@ -674,114 +674,188 @@ function setupViewportFix() {
   });
 }
 
-// ── Lock Screen ──
-const LOCK_PASS_KEY = 'tkun_pass';
-const LOCK_TS_KEY = 'tkun_unlocked_at';
-const LOCK_DURATION = 24 * 60 * 60 * 1000; // 24時間
+// ── Supabase Auth ──
+let authMode = 'login'; // 'login' or 'signup'
 
-function hashPass(p) {
-  let h = 0;
-  for (let i = 0; i < p.length; i++) { h = ((h << 5) - h) + p.charCodeAt(i); h |= 0; }
-  return 'h_' + h.toString(36);
-}
-
-function isUnlocked() {
-  const pass = localStorage.getItem(LOCK_PASS_KEY);
-  if (!pass) return false; // パスワード未設定 → ロック画面を表示
-  const ts = localStorage.getItem(LOCK_TS_KEY);
-  if (!ts) return false;
-  return (Date.now() - Number(ts)) < LOCK_DURATION;
-}
-
-let lockBound = false;
 function showLockScreen() {
   const lockEl = document.getElementById('lock-screen');
   if (!lockEl) return;
-  const stored = localStorage.getItem(LOCK_PASS_KEY);
-  const desc = document.querySelector('.lock-desc');
-  const inp = document.getElementById('lock-pass');
+  lockEl.classList.remove('hidden');
+
+  const emailInp = document.getElementById('lock-email');
+  const passInp = document.getElementById('lock-pass');
   const btn = document.getElementById('lock-btn');
   const err = document.getElementById('lock-err');
+  const desc = document.getElementById('lock-desc');
+  const switchBtn = document.getElementById('lock-switch');
+  const toggleEl = document.getElementById('lock-toggle');
 
-  // 初回：パスワード設定モード
-  if (!stored) {
-    inp.placeholder = '新しいパスワードを設定';
-    desc.textContent = 'パスワードを設定してください（初回のみ）';
-    btn.textContent = '設定する';
-  } else {
-    inp.placeholder = 'パスワード';
-    desc.textContent = 'パスワードを入力してください';
-    btn.textContent = 'ログイン';
+  authMode = 'login';
+  emailInp.value = '';
+  passInp.value = '';
+  err.textContent = '';
+  desc.textContent = 'ログインしてください';
+  btn.textContent = 'ログイン';
+  toggleEl.innerHTML = 'アカウントをお持ちでない方は<button class="lock-link" id="lock-switch">新規登録</button>';
+  setTimeout(() => emailInp.focus(), 100);
+
+  function updateMode() {
+    if (authMode === 'signup') {
+      desc.textContent = '新規アカウントを作成';
+      btn.textContent = '登録する';
+      toggleEl.innerHTML = 'すでにアカウントをお持ちの方は<button class="lock-link" id="lock-switch">ログイン</button>';
+    } else {
+      desc.textContent = 'ログインしてください';
+      btn.textContent = 'ログイン';
+      toggleEl.innerHTML = 'アカウントをお持ちでない方は<button class="lock-link" id="lock-switch">新規登録</button>';
+    }
+    err.textContent = '';
+    document.getElementById('lock-switch').addEventListener('click', () => {
+      authMode = authMode === 'login' ? 'signup' : 'login';
+      updateMode();
+    });
   }
 
-  lockEl.classList.remove('hidden');
-  inp.value = '';
-  err.textContent = '';
-  setTimeout(() => inp.focus(), 100);
+  document.getElementById('lock-switch').addEventListener('click', () => {
+    authMode = 'signup';
+    updateMode();
+  });
 
-  if (lockBound) return; // イベント重複防止
-  lockBound = true;
+  async function doAuth() {
+    const email = document.getElementById('lock-email').value.trim();
+    const pass = document.getElementById('lock-pass').value;
 
-  function doLogin() {
-    const passInput = document.getElementById('lock-pass');
-    const errEl = document.getElementById('lock-err');
-    const val = passInput.value;
-    const savedPass = localStorage.getItem(LOCK_PASS_KEY);
+    if (!email) { err.textContent = 'メールアドレスを入力してください'; return; }
+    if (!pass) { err.textContent = 'パスワードを入力してください'; return; }
+    if (pass.length < 6) { err.textContent = 'パスワードは6文字以上で入力してください'; return; }
 
-    if (!val) {
-      errEl.textContent = 'パスワードを入力してください';
-      errEl.style.display = 'block';
+    if (!supabaseClient) {
+      err.textContent = 'Supabase未設定です。同期設定を先に行ってください';
       return;
     }
 
-    if (!savedPass) {
-      // 初回：パスワードを保存
-      localStorage.setItem(LOCK_PASS_KEY, hashPass(val));
-      localStorage.setItem(LOCK_TS_KEY, Date.now().toString());
-      document.getElementById('lock-screen').classList.add('hidden');
+    const authBtn = document.getElementById('lock-btn');
+    authBtn.disabled = true;
+    authBtn.textContent = '処理中...';
+    err.textContent = '';
+
+    try {
+      let result;
+      if (authMode === 'signup') {
+        result = await supabaseClient.auth.signUp({ email, password: pass });
+      } else {
+        result = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+      }
+
+      if (result.error) {
+        const msg = result.error.message;
+        if (msg.includes('Invalid login')) err.textContent = 'メールアドレスまたはパスワードが違います';
+        else if (msg.includes('already registered')) err.textContent = 'このメールアドレスは既に登録されています';
+        else if (msg.includes('invalid')) err.textContent = '無効なメールアドレスです';
+        else err.textContent = msg;
+        authBtn.disabled = false;
+        updateMode();
+        return;
+      }
+
+      if (authMode === 'signup' && result.data?.user && !result.data.session) {
+        // メール確認が必要な場合
+        err.style.color = '#2A7A4B';
+        err.textContent = '確認メールを送信しました。メールを確認してからログインしてください。';
+        authMode = 'login';
+        updateMode();
+        authBtn.disabled = false;
+        return;
+      }
+
+      // ログイン成功
+      lockEl.classList.add('hidden');
+      updateAcctUI(result.data.user);
       startApp();
-    } else if (hashPass(val) === savedPass) {
-      // 正しいパスワード
-      localStorage.setItem(LOCK_TS_KEY, Date.now().toString());
-      document.getElementById('lock-screen').classList.add('hidden');
-      errEl.textContent = '';
-      startApp();
-    } else {
-      // パスワード間違い
-      errEl.textContent = 'パスワードが違います';
-      errEl.style.display = 'block';
-      passInput.value = '';
-      passInput.focus();
+    } catch (e) {
+      err.textContent = 'エラー: ' + e.message;
+      authBtn.disabled = false;
+      updateMode();
     }
   }
 
-  btn.addEventListener('click', doLogin);
-  inp.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); doLogin(); }
-  });
+  // イベント（毎回新しいcloneで置き換えて重複防止）
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+  newBtn.addEventListener('click', doAuth);
+
+  const newPass = passInp.cloneNode(true);
+  passInp.parentNode.replaceChild(newPass, passInp);
+  newPass.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAuth(); } });
+
+  const newEmail = emailInp.cloneNode(true);
+  emailInp.parentNode.replaceChild(newEmail, emailInp);
+  newEmail.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('lock-pass').focus(); } });
 }
 
-function logout() {
-  localStorage.removeItem(LOCK_TS_KEY);
+function updateAcctUI(user) {
+  if (!user) return;
+  const initial = (user.email || 'U')[0].toUpperCase();
+  const navBtn = document.getElementById('nav-acct-btn');
+  const mobBtn = document.getElementById('mob-acct-btn');
+  if (navBtn) navBtn.textContent = initial;
+  if (mobBtn) mobBtn.textContent = initial;
+}
+
+async function logout() {
+  if (supabaseClient) {
+    await supabaseClient.auth.signOut();
+  }
   location.reload();
 }
 
 // ── Init ──
 function startApp() {
   load(); bindEvents(); render(); setupViewportFix();
-  const cfg = getSyncCfg();
-  if (cfg && cfg.url && cfg.key) initSync().catch(e => console.error('sync:', e));
+  // sync pull（auth済みのsupabaseClientを再利用）
+  if (supabaseClient) {
+    syncPull().then(() => {
+      supabaseClient.channel('tk').on('postgres_changes',{event:'*',schema:'public',table:'tasks'},handleRemote).subscribe();
+    }).catch(e => console.error('sync:', e));
+  }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-function init() {
+async function initSupabaseClient() {
+  const cfg = getSyncCfg();
+  if (!cfg || !cfg.url || !cfg.key) return false;
+  await loadSB();
+  supabaseClient = window.supabase.createClient(cfg.url, cfg.key);
+  return true;
+}
+
+async function init() {
   const lockEl = document.getElementById('lock-screen');
-  if (isUnlocked()) {
-    // ログイン済み → ロック画面を非表示にしてアプリ起動
+
+  // Supabaseクライアントを初期化
+  const hasSB = await initSupabaseClient();
+
+  if (!hasSB) {
+    // Supabase未設定 → ロック画面を表示（エラーメッセージ付き）
+    showLockScreen();
+    const err = document.getElementById('lock-err');
+    if (err) {
+      err.style.color = '#C07000';
+      err.textContent = 'Supabase未設定です。同期設定を先に行ってください。';
+    }
+    return;
+  }
+
+  // セッションを確認
+  const { data: { session } } = await supabaseClient.auth.getSession();
+
+  if (session && session.user) {
+    // ログイン済み
     if (lockEl) lockEl.classList.add('hidden');
+    updateAcctUI(session.user);
     startApp();
   } else {
-    // 未ログイン → ロック画面を表示
+    // 未ログイン
     showLockScreen();
   }
 }

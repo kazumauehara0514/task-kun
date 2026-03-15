@@ -488,6 +488,9 @@ body{
 }
 .lock-btn:active{opacity:.7}
 .lock-err{font-size:11px;color:#EF4444;margin-top:10px;min-height:16px;font-family:'DM Mono',monospace}
+.lock-toggle{font-size:12px;color:var(--text3);margin-top:16px}
+.lock-link{background:none;border:none;color:var(--cat-work);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;text-decoration:underline}
+.lock-link:hover{opacity:.7}
 
 /* ── DESKTOP ── */
 @media(min-width:768px){
@@ -682,10 +685,12 @@ body{
   <div class="lock-box">
     <div class="lock-icon">🔒</div>
     <div class="lock-title">タスクくん</div>
-    <div class="lock-desc">パスワードを入力してください</div>
+    <div class="lock-desc" id="lock-desc">ログインしてください</div>
+    <input class="lock-input" type="email" id="lock-email" placeholder="メールアドレス" autocomplete="email">
     <input class="lock-input" type="password" id="lock-pass" placeholder="パスワード" autocomplete="current-password">
     <button class="lock-btn" id="lock-btn">ログイン</button>
     <div class="lock-err" id="lock-err"></div>
+    <div class="lock-toggle" id="lock-toggle">アカウントをお持ちでない方は<button class="lock-link" id="lock-switch">新規登録</button></div>
   </div>
 </div>
 
