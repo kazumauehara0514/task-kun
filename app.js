@@ -355,6 +355,7 @@ function render() {
   const ds = dateHeader();
 
   // Desktop nav
+  const nb = document.getElementById('nav-badge'); if(nb) nb.textContent = `${c.all}`;
   const nd = document.getElementById('nav-date'); if(nd) nd.textContent = ds;
   const ns = document.getElementById('nav-stats');
   if(ns) {
