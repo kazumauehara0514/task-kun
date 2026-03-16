@@ -97,7 +97,7 @@ function dueText(due) {
   if (diff < 0) return '期限切れ';
   if (diff === 0) return '今日';
   if (diff === 1) return '明日';
-  if (diff <= 3) return '近日中';
+  if (diff === 2) return '明後日';
   return fmtDate(due);
 }
 
