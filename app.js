@@ -176,7 +176,7 @@ function deleteTask(id) { tasks=tasks.filter(t=>t.id!==id); save(); syncDel(id);
 function duplicateTask(id) {
   const orig = tasks.find(t => t.id === id);
   if (!orig) return;
-  const t = { ...orig, id: uid(), title: orig.title, status: 'todo', done: false, subtasks: (orig.subtasks||[]).map(s => ({...s, id: uid(), done: false})), createdAt: Date.now(), updatedAt: Date.now() };
+  const t = { id: uid(), title: orig.title, category: orig.category, priority: orig.priority, due: orig.due, status: 'todo', done: false, description: orig.description || '', tags: [...(orig.tags||[])], subtasks: (orig.subtasks||[]).map(s => ({id: uid(), title: s.title, done: false})), createdAt: Date.now(), updatedAt: Date.now() };
   tasks.unshift(t); save(); syncPush(t); render(); openDetail(t.id);
 }
 function updateTask(id, updates) {
