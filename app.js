@@ -597,9 +597,10 @@ function renderTasks() {
   const po = { high:0, mid:1, low:2 };
   const so = { wip:0, todo:1 };
   active.sort((a,b) => {
+    if (a.due && b.due) { if (a.due !== b.due) return a.due < b.due ? -1 : 1; }
+    else if (a.due) return -1;
+    else if (b.due) return 1;
     if (po[a.priority] !== po[b.priority]) return po[a.priority] - po[b.priority];
-    if (a.due && b.due) return a.due < b.due ? -1 : 1;
-    if (a.due) return -1; if (b.due) return 1;
     if ((so[a.status]||1) !== (so[b.status]||1)) return (so[a.status]||1) - (so[b.status]||1);
     return b.createdAt - a.createdAt;
   });
