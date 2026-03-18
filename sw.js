@@ -18,6 +18,8 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // http/https以外（chrome-extension等）は無視
+  if (!e.request.url.startsWith('http')) return;
   // Supabase: network only
   if (e.request.url.includes('supabase')) {
     e.respondWith(fetch(e.request));
