@@ -148,6 +148,12 @@ function setStatus(id, status) {
   save(); syncPush(t); render();
 }
 function deleteTask(id) { tasks=tasks.filter(t=>t.id!==id); save(); syncDel(id); render(); closeDetail(); }
+function duplicateTask(id) {
+  const orig = tasks.find(t => t.id === id);
+  if (!orig) return;
+  const t = { ...orig, id: uid(), title: orig.title, status: 'todo', done: false, subtasks: (orig.subtasks||[]).map(s => ({...s, id: uid(), done: false})), createdAt: Date.now(), updatedAt: Date.now() };
+  tasks.unshift(t); save(); syncPush(t); render(); openDetail(t.id);
+}
 function updateTask(id, updates) {
   const t = tasks.find(x => x.id === id);
   if (!t) return;
@@ -260,6 +266,7 @@ function openDetail(id) {
         </div>
       </div>
       <div class="det-divider"></div>
+      <button class="det-dup" id="det-dup-btn">📋 このタスクを複製</button>
       <button class="det-delete" id="det-del-btn">このタスクを削除</button>
     </div>
   `;
@@ -278,7 +285,7 @@ function openDetail(id) {
   document.getElementById('det-due').addEventListener('change', () => saveDetailEdits(t.id));
   // Tag add
   document.getElementById('det-tag-inp').addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
+    if (e.key !== 'Enter' || e.isComposing) return;
     e.preventDefault();
     const val = e.target.value.trim();
     if (!val) return;
@@ -302,6 +309,7 @@ function openDetail(id) {
       openDetail(t.id);
     });
   });
+  document.getElementById('det-dup-btn').addEventListener('click', () => { duplicateTask(t.id); });
   document.getElementById('det-del-btn').addEventListener('click', () => {
     if (confirm('「' + t.title + '」を削除しますか？')) deleteTask(t.id);
   });
@@ -659,13 +667,13 @@ function bindEvents() {
   // Mobile add
   document.getElementById('mob-add-btn').addEventListener('click', addFromMobile);
   const mobInp = document.getElementById('mob-inp');
-  mobInp.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); addFromMobile(); } });
+  mobInp.addEventListener('keydown', e => { if (e.key==='Enter' && !e.isComposing) { e.preventDefault(); addFromMobile(); } });
   mobInp.addEventListener('focus', () => { setTimeout(() => mobInp.scrollIntoView({block:'end',behavior:'smooth'}), 300); });
   // Desktop add
   document.getElementById('tb-add-btn').addEventListener('click', openDeskForm);
   document.getElementById('df-cancel').addEventListener('click', closeDeskForm);
   document.getElementById('df-submit').addEventListener('click', submitDeskForm);
-  document.getElementById('df-title').addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); submitDeskForm(); } });
+  document.getElementById('df-title').addEventListener('keydown', e => { if (e.key==='Enter' && !e.isComposing) { e.preventDefault(); submitDeskForm(); } });
   // Done toggle
   document.getElementById('tb-done-toggle').addEventListener('click', () => { showDone = !showDone; render(); });
   // Sync
