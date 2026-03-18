@@ -301,7 +301,10 @@ function openDetail(id) {
   bg.classList.add('vis');
 
   document.getElementById('det-close').addEventListener('click', () => { saveDetailEdits(t.id); closeDetail(); });
-  bg.addEventListener('click', () => { saveDetailEdits(t.id); closeDetail(); });
+  // bgは毎回新しいリスナーが蓄積しないようcloneNodeで古いリスナーを除去
+  const newBg = bg.cloneNode(true);
+  bg.parentNode.replaceChild(newBg, bg);
+  newBg.addEventListener('click', () => { saveDetailEdits(t.id); closeDetail(); });
   document.getElementById('det-status').addEventListener('change', (e) => {
     setStatus(t.id, e.target.value);
     openDetail(t.id);
