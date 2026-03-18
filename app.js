@@ -134,6 +134,31 @@ function save() { localStorage.setItem('tasks', JSON.stringify(tasks)); }
 function getSyncCfg() { return JSON.parse(localStorage.getItem('tkun_sync') || 'null'); }
 function setSyncCfg(c) { localStorage.setItem('tkun_sync', JSON.stringify(c)); }
 
+// ── Templates ──
+function getTemplates() { return JSON.parse(localStorage.getItem('tkun_templates') || '[]'); }
+function saveTemplates(tpls) { localStorage.setItem('tkun_templates', JSON.stringify(tpls)); }
+function saveAsTemplate(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  const tpls = getTemplates();
+  const tpl = { id: uid(), title: t.title, category: t.category, priority: t.priority, description: t.description || '', tags: [...(t.tags||[])], subtasks: (t.subtasks||[]).map(s => ({title:s.title})), createdAt: Date.now() };
+  tpls.unshift(tpl);
+  saveTemplates(tpls);
+  render();
+}
+function createFromTemplate(tplId) {
+  const tpls = getTemplates();
+  const tpl = tpls.find(x => x.id === tplId);
+  if (!tpl) return;
+  const t = { id: uid(), title: tpl.title, category: tpl.category || 'uncategorized', priority: tpl.priority || 'mid', due: null, status: 'todo', done: false, description: tpl.description || '', tags: [...(tpl.tags||[])], subtasks: (tpl.subtasks||[]).map(s => ({id:uid(),title:s.title,done:false})), createdAt: Date.now(), updatedAt: Date.now() };
+  tasks.unshift(t); save(); syncPush(t); render(); openDetail(t.id);
+}
+function deleteTemplate(tplId) {
+  const tpls = getTemplates().filter(x => x.id !== tplId);
+  saveTemplates(tpls);
+  render();
+}
+
 // ── Task Ops ──
 function addTask(d) {
   const t = { id:uid(), title:d.title, category:d.category||'uncategorized', priority:d.priority||'mid', due:d.due||null, status:'todo', done:false, description:'', tags:[], subtasks:[], createdAt:Date.now(), updatedAt:Date.now() };
@@ -267,6 +292,7 @@ function openDetail(id) {
       </div>
       <div class="det-divider"></div>
       <button class="det-dup" id="det-dup-btn">📋 このタスクを複製</button>
+      <button class="det-dup" id="det-tpl-btn">📌 テンプレートとして保存</button>
       <button class="det-delete" id="det-del-btn">このタスクを削除</button>
     </div>
   `;
@@ -310,6 +336,13 @@ function openDetail(id) {
     });
   });
   document.getElementById('det-dup-btn').addEventListener('click', () => { duplicateTask(t.id); });
+  document.getElementById('det-tpl-btn').addEventListener('click', () => {
+    saveAsTemplate(t.id);
+    const btn = document.getElementById('det-tpl-btn');
+    btn.textContent = '✓ 保存しました';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = '📌 テンプレートとして保存'; btn.disabled = false; }, 1500);
+  });
   document.getElementById('det-del-btn').addEventListener('click', () => {
     if (confirm('「' + t.title + '」を削除しますか？')) deleteTask(t.id);
   });
@@ -403,15 +436,56 @@ function render() {
 function renderCatTabs(c) {
   const el = document.getElementById('cat-tabs');
   if (!el) return;
+  const tpls = getTemplates();
   const tabs = [
     { key:'all', label:'すべて(未完了)' },
     ...Object.keys(CAT).map(k => ({ key: k, label: CAT[k] })),
     { key:'done', label:'完了済み' },
   ];
-  el.innerHTML = tabs.map(t =>
+  let html = tabs.map(t =>
     `<button class="ctab ${filter===t.key ? 'active-'+t.key : ''}" data-filter="${t.key}">${t.label}</button>`
   ).join('');
-  el.querySelectorAll('.ctab').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
+  if (tpls.length > 0) {
+    html += `<button class="ctab ctab-tpl" id="mob-tpl-btn">📌 テンプレ</button>`;
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('.ctab[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
+  const mobTplBtn = document.getElementById('mob-tpl-btn');
+  if (mobTplBtn) mobTplBtn.addEventListener('click', () => openTemplateModal());
+}
+
+function openTemplateModal() {
+  const tpls = getTemplates();
+  if (tpls.length === 0) return;
+  const bg = document.getElementById('modal-bg');
+  const modal = document.getElementById('tpl-modal');
+  modal.innerHTML = `
+    <h3>📌 テンプレート</h3>
+    <p class="mdesc">タップしてタスクを作成</p>
+    <div class="tpl-list">
+      ${tpls.map(tpl => `
+        <div class="tpl-row">
+          <button class="tpl-use" data-tpl="${tpl.id}">
+            <div class="tpl-title">${esc(tpl.title)}</div>
+            <div class="tpl-meta">${esc(CAT[tpl.category]||tpl.category)} · ${esc(PRI[tpl.priority]||tpl.priority)}</div>
+          </button>
+          <button class="tpl-del" data-tpl-del="${tpl.id}">×</button>
+        </div>
+      `).join('')}
+    </div>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="tb-btn" id="tpl-modal-close">閉じる</button>
+    </div>
+  `;
+  bg.classList.add('vis');
+  modal.classList.add('vis');
+  document.getElementById('tpl-modal-close').addEventListener('click', closeTemplateModal);
+  modal.querySelectorAll('.tpl-use').forEach(b => b.addEventListener('click', () => { closeTemplateModal(); createFromTemplate(b.dataset.tpl); }));
+  modal.querySelectorAll('.tpl-del').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); deleteTemplate(b.dataset.tplDel); openTemplateModal(); }));
+}
+function closeTemplateModal() {
+  document.getElementById('modal-bg').classList.remove('vis');
+  document.getElementById('tpl-modal').classList.remove('vis');
 }
 
 function renderSidebar(c) {
@@ -443,6 +517,19 @@ function renderSidebar(c) {
     </div>
     <div class="sb-divider"></div>
     <div class="sb-section">
+      <div class="sb-label">テンプレート</div>
+      ${getTemplates().length === 0 ? '<div class="sb-empty-tpl">タスク詳細から保存できます</div>' :
+        getTemplates().map(tpl =>
+          `<div class="sb-tpl-row">
+            <button class="sb-item sb-tpl-item" data-tpl="${tpl.id}" title="${esc(tpl.title)}">
+              <span style="font-size:13px">📌</span> ${esc(tpl.title.length > 18 ? tpl.title.slice(0,18)+'…' : tpl.title)}
+            </button>
+            <button class="sb-tpl-del" data-tpl-del="${tpl.id}" title="削除">×</button>
+          </div>`
+        ).join('')}
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section">
       <button class="sb-item sb-archive ${filter==='done'?'active':''}" data-filter="done">
         完了済みタスク <span class="sb-count">${c.done}</span>
       </button>
@@ -455,6 +542,9 @@ function renderSidebar(c) {
     addCategory(name.trim());
     render();
   });
+  // Template events
+  el.querySelectorAll('.sb-tpl-item').forEach(b => b.addEventListener('click', () => { createFromTemplate(b.dataset.tpl); }));
+  el.querySelectorAll('.sb-tpl-del').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); deleteTemplate(b.dataset.tplDel); }));
 }
 
 function renderTasks() {
